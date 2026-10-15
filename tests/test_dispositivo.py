@@ -60,15 +60,20 @@ class Mac(unittest.TestCase):
         self.assertEqual(info["connections"], {("mac", MAC)})
 
 
-class RegistroFalso:
-    def __init__(self, sw_version=None):
-        self.dispositivo = type("Dispositivo", (), {"id": "d1", "sw_version": sw_version})()
-        self.atualizacoes: list[dict] = []
-        self.procurado = None
+def dispositivo(ident, sw_version=None):
+    return type("Dispositivo", (), {
+        "id": ident[1], "identifiers": {ident}, "sw_version": sw_version,
+    })()
 
-    def async_get_device(self, identifiers=None, connections=None):
-        self.procurado = identifiers
-        return self.dispositivo
+
+class RegistroFalso:
+    """So o que atualiza_dispositivo usa. Sem async_get_device: desde o HA
+    2026.10 ele avisa que esta obsoleto, e o substituto nao existe nas versoes
+    antigas que o hacs.json ainda aceita."""
+
+    def __init__(self, *dispositivos):
+        self.dispositivos = list(dispositivos)
+        self.atualizacoes: list[dict] = []
 
     def async_update_device(self, device_id, **mudancas):
         self.atualizacoes.append({"id": device_id, **mudancas})
@@ -77,31 +82,41 @@ class RegistroFalso:
 class AtualizaDispositivo(unittest.TestCase):
     def setUp(self):
         self.dr = sys.modules["homeassistant.helpers.device_registry"]
+        self.pedido_entry = None
 
     def tearDown(self):
         self.dr.async_get = None
+        self.dr.async_entries_for_config_entry = None
 
-    def test_grava_o_firmware(self):
-        falso = RegistroFalso()
+    def usa(self, falso):
+        def entries(registro_, entry_id):
+            self.pedido_entry = entry_id
+            return registro_.dispositivos
+
         self.dr.async_get = lambda hass: falso
+        self.dr.async_entries_for_config_entry = entries
+
+    def test_grava_o_firmware_so_no_dispositivo_do_modulo(self):
+        falso = RegistroFalso(dispositivo(("controlart", "74-14-6E")), dispositivo(("controlart", MAC)))
+        self.usa(falso)
         mod = rele()
         mod._trata_linha("3027")
-        registro.atualiza_dispositivo(None, mod)
-        self.assertEqual(falso.procurado, {("controlart", MAC)})
-        self.assertEqual(falso.atualizacoes, [{"id": "d1", "sw_version": "3.027"}])
+        registro.atualiza_dispositivo(None, "entrada1", mod)
+        self.assertEqual(self.pedido_entry, "entrada1")
+        self.assertEqual(falso.atualizacoes, [{"id": MAC, "sw_version": "3.027"}])
 
     def test_firmware_igual_nao_regrava(self):
-        falso = RegistroFalso(sw_version="3.027")
-        self.dr.async_get = lambda hass: falso
+        falso = RegistroFalso(dispositivo(("controlart", MAC), sw_version="3.027"))
+        self.usa(falso)
         mod = rele()
         mod._trata_linha("3027")
-        registro.atualiza_dispositivo(None, mod)
+        registro.atualiza_dispositivo(None, "entrada1", mod)
         self.assertEqual(falso.atualizacoes, [])
 
     def test_sem_firmware_nao_mexe(self):
-        falso = RegistroFalso(sw_version="3.027")
-        self.dr.async_get = lambda hass: falso
-        registro.atualiza_dispositivo(None, rele())
+        falso = RegistroFalso(dispositivo(("controlart", MAC), sw_version="3.027"))
+        self.usa(falso)
+        registro.atualiza_dispositivo(None, "entrada1", rele())
         self.assertEqual(falso.atualizacoes, [])
 
 

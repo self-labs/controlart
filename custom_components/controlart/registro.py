@@ -68,12 +68,17 @@ def limpa_registro(hass: HomeAssistant, entry: ConfigEntry, modulos: list[dict[s
 
 
 @callback
-def atualiza_dispositivo(hass: HomeAssistant, modulo: ModuloConexao) -> None:
-    """Grava no dispositivo o firmware que o modulo acabou de informar."""
+def atualiza_dispositivo(hass: HomeAssistant, entry_id: str, modulo: ModuloConexao) -> None:
+    """Grava no dispositivo o firmware que o modulo acabou de informar.
+
+    Procura entre os dispositivos da propria entrada, e nao por
+    async_get_device: o HA 2026.10 avisa que ele esta obsoleto, e o substituto
+    (async_get_device_by_identifier) nao existe nas versoes que o hacs.json aceita.
+    """
     versao = modulo.versao_firmware
     if versao is None:
         return
     devs = dr.async_get(hass)
-    dispositivo = devs.async_get_device(identifiers={(DOMAIN, modulo.mac)})
-    if dispositivo is not None and dispositivo.sw_version != versao:
-        devs.async_update_device(dispositivo.id, sw_version=versao)
+    for dispositivo in dr.async_entries_for_config_entry(devs, entry_id):
+        if (DOMAIN, modulo.mac) in dispositivo.identifiers and dispositivo.sw_version != versao:
+            devs.async_update_device(dispositivo.id, sw_version=versao)

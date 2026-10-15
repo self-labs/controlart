@@ -42,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ControlArtConfigEntry) -
             async_dispatcher_connect(
                 hass,
                 SIGNAL_IDENTIDADE.format(modulo.mac),
-                partial(atualiza_dispositivo, hass, modulo),
+                partial(atualiza_dispositivo, hass, entry.entry_id, modulo),
             )
         )
     hub.iniciar()
@@ -51,7 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ControlArtConfigEntry) -
     await hass.config_entries.async_forward_entry_setups(entry, PLATAFORMAS)
     # o firmware pode ter chegado antes de o dispositivo existir no registro
     for modulo in hub.modulos.values():
-        atualiza_dispositivo(hass, modulo)
+        atualiza_dispositivo(hass, entry.entry_id, modulo)
     entry.async_on_unload(entry.add_update_listener(_recarrega))
     return True
 
