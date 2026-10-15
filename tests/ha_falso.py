@@ -95,8 +95,10 @@ _modulo("homeassistant.components")
 _modulo(
     "homeassistant.components.light",
     ATTR_BRIGHTNESS="brightness",
+    ATTR_TRANSITION="transition",
     ColorMode=ColorMode,
     LightEntity=type("LightEntity", (), {}),
+    LightEntityFeature=type("LightEntityFeature", (), {"TRANSITION": 32}),
 )
 _modulo("homeassistant.components.sensor", SensorEntity=type("SensorEntity", (), {}))
 _modulo("homeassistant.components.button", ButtonEntity=type("ButtonEntity", (), {}))

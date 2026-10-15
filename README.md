@@ -45,6 +45,7 @@ O módulo precisa de **IP fixo** (reserva no roteador ou IP estático no mdConfi
 - **Interruptor comum numa automação**: a posição da alavanca **não** diz se a luz está acesa. O módulo inverte a saída a cada movimento, então as duas coisas se desencontram. Dispare em *qualquer* mudança do sensor da entrada e use `toggle`.
 - **Cenas do keypad**: o módulo executa a cena programada no mdConfig quando a tecla é apertada na parede. Não existe comando para disparar essa cena remotamente. Para acioná-la pelo Home Assistant, reproduza-a num script.
 - **Dimmer aceso sem brilho escolhido** (botão, voz, "acender a sala"): o canal volta ao último nível visto desde que o Home Assistant iniciou; se nunca acendeu, vai ao máximo.
+- **Transição no dimmer** (`transition` em `light.turn_on` e `light.turn_off`): a integração faz a rampa, um nível de cada vez, com pelo menos 0,2 s entre os degraus. O serviço volta na hora; um comando novo no mesmo canal cancela a rampa.
 - **Comando que o módulo não confirma** vira erro no Home Assistant em vez de passar em silêncio. Um módulo que para de responder derruba a conexão e as entidades ficam indisponíveis até ele voltar.
 
 ## Limitações

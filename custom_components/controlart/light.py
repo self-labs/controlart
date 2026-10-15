@@ -13,7 +13,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ATTR_TRANSITION,
+    ColorMode,
+    LightEntity,
+    LightEntityFeature,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -59,11 +65,16 @@ class Saida(EntidadeControlArt, LightEntity):
 
 
 class CanalDimmer(Saida):
-    """Um canal do dimmer. Sem brilho pedido, acende no ultimo nivel visto."""
+    """Um canal do dimmer. Sem brilho pedido, acende no ultimo nivel visto.
+
+    Com `transition`, a rampa roda em segundo plano (ver ModuloConexao.rampa):
+    o servico volta na hora, e o brilho acompanha os quadros do modulo.
+    """
 
     _attr_translation_key = "canal"
     _attr_color_mode = ColorMode.BRIGHTNESS
     _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+    _attr_supported_features = LightEntityFeature.TRANSITION
 
     @property
     def brightness(self) -> int:
@@ -73,7 +84,13 @@ class CanalDimmer(Saida):
         nivel = kwargs.get(ATTR_BRIGHTNESS)
         if nivel is None:
             nivel = self._modulo.nivel_ao_ligar(self._canal)
-        await self._modulo.envia_nivel(self._canal, nivel)
+        await self._ajusta(nivel, kwargs.get(ATTR_TRANSITION))
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self._modulo.envia_nivel(self._canal, 0)
+        await self._ajusta(0, kwargs.get(ATTR_TRANSITION))
+
+    async def _ajusta(self, nivel: int, segundos: float | None) -> None:
+        if segundos:
+            self._modulo.rampa(self._canal, nivel, segundos)
+        else:
+            await self._modulo.envia_nivel(self._canal, nivel)

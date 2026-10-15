@@ -70,6 +70,7 @@ from .const import (
 
 NIVEL_MAX = 255
 LINHAS_GUARDADAS = 50           # para o diagnostico: o bastante para alguns minutos de uso
+PASSO_RAMPA = 0.2               # s · intervalo minimo entre os degraus de uma transicao
 
 # Identificacao pedida na conexao. Nao vem do proprio repositorio: e o que o
 # driver Hubitat da ControlArt (hhorigian/hubitat_Controlart_Relays) manda.
@@ -149,6 +150,7 @@ class ModuloConexao:
         self._parar = asyncio.Event()
         self._mudanca = asyncio.Event()     # renovado a cada mudanca das saidas
         self._ultimo_quadro = 0.0
+        self._rampas: dict[int, asyncio.Task] = {}   # transicao em andamento, por canal
         # so para o diagnostico
         self.linhas: deque[tuple[str, str, str]] = deque(maxlen=LINHAS_GUARDADAS)
         self.firmware: str | None = None
@@ -194,6 +196,8 @@ class ModuloConexao:
 
     async def parar(self) -> None:
         self._parar.set()
+        for canal in list(self._rampas):
+            self._cancela_rampa(canal)
         if self._writer is not None:
             self._writer.close()
         if self._task is not None:
@@ -288,7 +292,49 @@ class ModuloConexao:
         """
         if not 0 <= nivel <= NIVEL_MAX:
             raise ValueError(f"nivel fora da faixa 0-{NIVEL_MAX}: {nivel}")
+        self._cancela_rampa(canal)
         await self._envia(canal, nivel)
+
+    def rampa(self, canal: int, alvo: int, segundos: float) -> None:
+        """Leva o canal do dimmer ate `alvo` aos poucos, em segundo plano.
+
+        O modulo nao tem rampa propria conhecida, mas aceita qualquer nivel e
+        confirma em milissegundos: a transicao e uma sequencia de comandos com
+        no minimo PASSO_RAMPA entre eles, nunca mais de um degrau por nivel.
+        Um comando novo no mesmo canal cancela a rampa em andamento.
+        """
+        if not 1 <= canal <= self.n_saidas:
+            raise ValueError(f"canal fora da faixa 1-{self.n_saidas}: {canal}")
+        if not 0 <= alvo <= NIVEL_MAX:
+            raise ValueError(f"nivel fora da faixa 0-{NIVEL_MAX}: {alvo}")
+        if self._writer is None or not self.conectado:
+            raise HomeAssistantError(f"ControlArt {self.nome} ({self.host}) esta desconectado")
+        self._cancela_rampa(canal)
+        self._rampas[canal] = asyncio.get_running_loop().create_task(
+            self._rampa(canal, alvo, segundos), name=f"controlart {self.mac} rampa {canal}"
+        )
+
+    async def _rampa(self, canal: int, alvo: int, segundos: float) -> None:
+        relogio = asyncio.get_running_loop()
+        inicio = self.saidas[canal - 1]
+        passos = min(abs(alvo - inicio), max(1, round(segundos / PASSO_RAMPA)))
+        try:
+            for n in range(1, passos + 1):
+                comeco = relogio.time()
+                await self._envia(canal, round(inicio + (alvo - inicio) * n / passos))
+                if n < passos:
+                    await asyncio.sleep(max(0.0, segundos / passos - (relogio.time() - comeco)))
+        except HomeAssistantError as err:
+            _LOGGER.warning("ControlArt %s: transicao do canal %d interrompida: %s",
+                            self.nome, canal, err)
+        finally:
+            if self._rampas.get(canal) is asyncio.current_task():
+                del self._rampas[canal]
+
+    def _cancela_rampa(self, canal: int) -> None:
+        tarefa = self._rampas.pop(canal, None)
+        if tarefa is not None and tarefa is not asyncio.current_task():
+            tarefa.cancel()
 
     def nivel_ao_ligar(self, canal: int) -> int:
         """Nivel para acender sem brilho pedido: o ultimo aceso, ou o maximo."""
