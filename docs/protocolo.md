@@ -55,18 +55,28 @@ O comando é **absoluto e idempotente**: "liga" numa saída já acesa não faz n
 
 ## Outros comandos
 
-Vistos no driver Hubitat para os mesmos módulos ([hhorigian/hubitat_Controlart_Relays](https://github.com/hhorigian/hubitat_Controlart_Relays)). **Ainda não conferidos num módulo real** por esta integração.
+Vistos no driver Hubitat para os mesmos módulos ([hhorigian/hubitat_Controlart_Relays](https://github.com/hhorigian/hubitat_Controlart_Relays)).
 
 ```
 -> mdcmd_setallonmd,170,187,204      acende todas as saídas deste módulo
 -> mdcmd_setalloffmd,170,187,204     apaga todas as saídas deste módulo
 -> mdcmd_setmasteronmd               sem endereço; responde "MasterOn"
 -> mdcmd_setmasteroffmd              sem endereço; responde "MasterOff"
--> get_firmware_version             responde uma linha que começa com "VERSION"
--> get_mac_addr                     responde o MAC completo, numa linha que começa com "MACADDR"
+-> get_firmware_version
+<- 3027                              relé; o dimmer respondeu 1021
+-> get_mac_addr
+<- macaddr_RT,AA-BB-CC               relé; o dimmer respondeu macaddr,AA-BB-CC
 ```
 
+Conferidos num módulo real: `get_firmware_version` e `get_mac_addr`. O firmware vem só como número (o driver Hubitat espera uma linha começando com `VERSION`, que estes módulos não mandam), e o MAC vem curto, igual ao do quadro de estado. Os `setall*` e `setmaster*` ainda **não** foram enviados a um módulo real por esta integração.
+
 A integração usa o `setall*` (com endereço) nos botões "Acender tudo" e "Apagar tudo", e pede firmware e MAC a cada conexão, para o diagnóstico. O `setmaster*` fica de fora: sem endereço, e pelo que descreve o driver ELAN da T4Control, ele vale para todos os módulos da instalação.
+
+As linhas de motor que acompanham o estado do relé vêm assim num módulo sem motor configurado, uma por motor (0 a 4):
+
+```
+<- setbmcb0md,AA-BB-CC,0,0,0,255
+```
 
 ## Tipos de entrada (mdConfig)
 

@@ -153,8 +153,8 @@ class ModuloConexao:
         self._rampas: dict[int, asyncio.Task] = {}   # transicao em andamento, por canal
         # so para o diagnostico
         self.linhas: deque[tuple[str, str, str]] = deque(maxlen=LINHAS_GUARDADAS)
-        self.firmware: str | None = None
-        self.mac_completo: str | None = None
+        self.firmware: str | None = None        # rele 3027, dimmer 1021 (15/10/2026)
+        self.mac_informado: str | None = None   # "macaddr_RT,<mac>" no rele, "macaddr,<mac>" no dimmer
         self._motores: deque[str] = deque(maxlen=5)
         self.conexoes = 0
         self.ultima_queda: str | None = None
@@ -178,7 +178,7 @@ class ModuloConexao:
             "entradas": self.entradas,
             "saidas": self.saidas,
             "firmware": self.firmware,
-            "mac_completo": self.mac_completo,
+            "mac_informado": self.mac_informado,
             "motores": self.motores,
             "conexoes": self.conexoes,
             "ultima_queda": self.ultima_queda,
@@ -422,10 +422,10 @@ class ModuloConexao:
             self._trata_setcmd(partes[2:])
         elif cabeca == "setbmcb0md":
             self._motores.append(texto)  # configuracao de motor: so para o diagnostico
-        elif texto.startswith("VERSION"):
-            self.firmware = texto
-        elif texto.upper().startswith("MACADDR"):
-            self.mac_completo = texto
+        elif texto.isdigit() or texto.startswith("VERSION"):
+            self.firmware = texto        # o modulo responde so o numero; o driver Hubitat espera VERSION
+        elif texto.lower().startswith("macaddr"):
+            self.mac_informado = texto
         elif texto == "Parse Error!":
             _LOGGER.warning("ControlArt %s recusou a sintaxe de um comando", self.nome)
         else:

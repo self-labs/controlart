@@ -17,7 +17,7 @@ Cada módulo vira um dispositivo com:
 | `sensor` | 1 | O endereço IP do módulo (diagnóstico), visível mesmo com ele fora do ar |
 | `button` | 2 | "Acender tudo" e "Apagar tudo": o módulo inteiro com um comando só |
 
-A página da integração também oferece **Baixar diagnóstico**: as últimas linhas trocadas com cada módulo, o firmware e o MAC completo que ele informa, e quantas vezes a conexão caiu. Serve para suporte a distância, sem terminal na rede da instalação.
+A página da integração também oferece **Baixar diagnóstico**: as últimas linhas trocadas com cada módulo, o firmware e o MAC que ele informa, e quantas vezes a conexão caiu. Serve para suporte a distância, sem terminal na rede da instalação.
 
 Os interruptores e keypads da parede continuam funcionando como sempre: quem aciona as saídas é o módulo. O Home Assistant enxerga tudo o que acontece e manda comandos junto, sem um cancelar o outro.
 

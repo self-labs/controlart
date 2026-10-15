@@ -1,7 +1,7 @@
 """Diagnostico para download: o que o modulo disse, sem precisar de terminal.
 
 Pensado para suporte a distancia: as ultimas linhas trocadas com cada
-modulo, a identificacao que ele informa (firmware, MAC completo) e as
+modulo, a identificacao que ele informa (firmware e MAC) e as
 linhas de configuracao de motor, que a integracao ainda nao interpreta.
 """
 
@@ -44,21 +44,34 @@ class Linhas(unittest.TestCase):
 
 
 class Identificacao(unittest.TestCase):
-    def test_firmware(self):
+    # respostas reais (15/10/2026): rele responde "3027" e "macaddr_RT,<mac>",
+    # dimmer responde "1021" e "macaddr,<mac>"
+
+    def test_firmware_e_so_um_numero(self):
+        mod = rele()
+        mod._trata_linha("3027")
+        self.assertEqual(mod.firmware, "3027")
+
+    def test_firmware_no_formato_do_driver_hubitat(self):
         mod = rele()
         mod._trata_linha("VERSION 3.022")
         self.assertEqual(mod.firmware, "VERSION 3.022")
 
-    def test_mac_completo(self):
+    def test_mac_informado_pelo_rele(self):
         mod = rele()
-        mod._trata_linha("MACADDR,00-1E-C0-AA-BB-CC")
-        self.assertEqual(mod.mac_completo, "MACADDR,00-1E-C0-AA-BB-CC")
+        mod._trata_linha("macaddr_RT,AA-BB-CC")
+        self.assertEqual(mod.mac_informado, "macaddr_RT,AA-BB-CC")
+
+    def test_mac_informado_pelo_dimmer(self):
+        mod = rele()
+        mod._trata_linha("macaddr,AA-BB-CC")
+        self.assertEqual(mod.mac_informado, "macaddr,AA-BB-CC")
 
     def test_configuracao_de_motores(self):
         mod = rele()
-        for _ in range(5):
-            mod._trata_linha("setbmcb0md,AA-BB-CC,0,0,0,255")
-        self.assertEqual(mod.motores, ["setbmcb0md,AA-BB-CC,0,0,0,255"] * 5)
+        for motor in range(5):
+            mod._trata_linha(f"setbmcb0md,AA-BB-CC,{motor},0,0,255")
+        self.assertEqual(mod.motores, [f"setbmcb0md,AA-BB-CC,{m},0,0,255" for m in range(5)])
 
 
 class PedidoNaConexao(unittest.IsolatedAsyncioTestCase):
