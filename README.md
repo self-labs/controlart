@@ -40,6 +40,7 @@ O módulo precisa de **IP fixo** (reserva no roteador ou IP estático no mdConfi
 - **Tecla de keypad numa automação**: use o gatilho de *estado* na entidade `event`. Cada toque muda o estado para o horário do toque. Filtre `not_to: [unknown, unavailable]` para não disparar quando o Home Assistant reinicia.
 - **Interruptor comum numa automação**: a posição da alavanca **não** diz se a luz está acesa. O módulo inverte a saída a cada movimento, então as duas coisas se desencontram. Dispare em *qualquer* mudança do sensor da entrada e use `toggle`.
 - **Cenas do keypad**: o módulo executa a cena programada no mdConfig quando a tecla é apertada na parede. Não existe comando para disparar essa cena remotamente. Para acioná-la pelo Home Assistant, reproduza-a num script.
+- **Comando que o módulo não confirma** vira erro no Home Assistant em vez de passar em silêncio. Um módulo que para de responder derruba a conexão e as entidades ficam indisponíveis até ele voltar.
 
 ## Limitações
 

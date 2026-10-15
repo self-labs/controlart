@@ -65,3 +65,4 @@ Os vínculos entre entrada e saída ficam gravados no módulo. Cada vínculo tem
 - `Parse Error!` só aparece para **nome de comando desconhecido**. Um comando com nome válido e argumentos errados, incluindo endereço errado, é engolido em silêncio.
 - Não há comando conhecido para disparar remotamente a cena de uma tecla. `mdcmd_sendcmd`, usado pelo mdConfig, grava a programação; não aciona.
 - Não confie em "a entrada mudou" num quadro isolado; veja a regra do quadro de limpeza acima.
+- Um módulo sem energia ou com o cabo solto não fecha a conexão TCP. Só dá para perceber a queda pedindo o estado e esperando a resposta.

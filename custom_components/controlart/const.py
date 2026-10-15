@@ -7,6 +7,8 @@ INTERVALO_GETMD = 120          # s · pedido periodico de estado, serve de keepa
 JANELA_LIMPEZA = 2.0           # s · quadro com entradas zeradas logo apos outro
 RECONEXAO_MAX = 30             # s · teto da espera progressiva
 TIMEOUT_SONDA = 5.0            # s · para o modulo responder ao ser cadastrado
+TIMEOUT_RESPOSTA = 10.0        # s · para responder ao getmd; sem resposta, reconecta
+TIMEOUT_CONFIRMACAO = 3.0      # s · para o quadro que confirma um comando
 
 N_SAIDAS = 10
 N_ENTRADAS = 12

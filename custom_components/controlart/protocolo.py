@@ -52,6 +52,8 @@ from .const import (
     SIGNAL_CONEXAO,
     SIGNAL_ESTADO,
     SIGNAL_TECLA,
+    TIMEOUT_CONFIRMACAO,
+    TIMEOUT_RESPOSTA,
     TIMEOUT_SONDA,
 )
 
@@ -112,6 +114,7 @@ class ModuloConexao:
         self._writer: asyncio.StreamWriter | None = None
         self._task: asyncio.Task | None = None
         self._parar = asyncio.Event()
+        self._mudanca = asyncio.Event()     # renovado a cada mudanca das saidas
         self._ultimo_quadro = 0.0
 
     # ------------------------------------------------------------- ciclo
@@ -159,17 +162,25 @@ class ModuloConexao:
         async_dispatcher_send(self.hass, SIGNAL_CONEXAO.format(self.mac))
 
         await self._pede_estado()
+        aguardando = True                       # o getmd precisa de resposta
         try:
             while not self._parar.is_set():
                 try:
                     linha = await asyncio.wait_for(
-                        reader.readline(), timeout=INTERVALO_GETMD
+                        reader.readline(),
+                        timeout=TIMEOUT_RESPOSTA if aguardando else INTERVALO_GETMD,
                     )
                 except asyncio.TimeoutError:
+                    if aguardando:
+                        # modulo sem energia ou cabo solto nao manda RST: sem isso a
+                        # conexao parece viva e as entidades mostram estado velho
+                        raise ConnectionError("sem resposta ao pedido de estado") from None
                     await self._pede_estado()   # silencio longo: confirma que esta vivo
+                    aguardando = True
                     continue
                 if not linha:
                     raise ConnectionError("fechada pelo modulo")
+                aguardando = False              # qualquer quadro prova que esta vivo
                 texto = linha.decode("latin-1").strip()
                 if texto:
                     self._trata_linha(texto)
@@ -186,18 +197,43 @@ class ModuloConexao:
     async def envia_rele(self, canal: int, ligado: bool) -> None:
         """Liga ou desliga um circuito. `canal` vai de 1 a 10.
 
-        Comando absoluto: repetir o mesmo estado nao tem efeito.
+        Comando absoluto: repetir o mesmo estado nao tem efeito. Espera o
+        quadro em que a saida muda: o modulo engole em silencio um comando
+        com endereco ou argumento errado, e sem esperar a mudanca o erro
+        passaria despercebido. Se a saida ja esta no valor pedido, nao ha
+        quadro a esperar.
         """
         if not 1 <= canal <= N_SAIDAS:
             raise ValueError(f"canal fora da faixa 1-{N_SAIDAS}: {canal}")
         if self._writer is None or not self.conectado:
             raise HomeAssistantError(f"ControlArt {self.nome} ({self.host}) esta desconectado")
-        comando = f"mdcmd_sendrele,{self.addr},{canal - 1},{1 if ligado else 0}\r\n"
+        valor = 1 if ligado else 0
+        anterior = self.saidas[canal - 1]
+        mudanca = self._mudanca
+        comando = f"mdcmd_sendrele,{self.addr},{canal - 1},{valor}\r\n"
         self._writer.write(comando.encode("ascii"))
         await self._writer.drain()
         _LOGGER.debug("ControlArt %s: enviado %s", self.nome, comando.strip())
+        if valor == anterior:
+            return
+        try:
+            async with asyncio.timeout(TIMEOUT_CONFIRMACAO):
+                while self.saidas[canal - 1] == anterior:
+                    await mudanca.wait()
+                    mudanca = self._mudanca
+        except TimeoutError as err:
+            raise HomeAssistantError(
+                f"ControlArt {self.nome} ({self.host}) nao confirmou o comando: "
+                f"saida {canal} em {valor}"
+            ) from err
+
+    def _avisa_mudanca(self) -> None:
+        """Acorda quem espera confirmacao e arma o aviso da proxima mudanca."""
+        self._mudanca.set()
+        self._mudanca = asyncio.Event()
 
     def _marca_desconectado(self) -> None:
+        self.tem_estado = False             # ao reconectar, so vale o quadro novo
         if self.conectado:
             self.conectado = False
             async_dispatcher_send(self.hass, SIGNAL_CONEXAO.format(self.mac))
@@ -244,11 +280,13 @@ class ModuloConexao:
         if not self.tem_estado:
             self.entradas, self.saidas = entradas, saidas
             self.tem_estado = True
+            self._avisa_mudanca()
             async_dispatcher_send(self.hass, SIGNAL_ESTADO.format(self.mac))
             return
 
         if saidas != self.saidas:
             self.saidas = saidas
+            self._avisa_mudanca()
             async_dispatcher_send(self.hass, SIGNAL_ESTADO.format(self.mac))
 
         if limpeza:
