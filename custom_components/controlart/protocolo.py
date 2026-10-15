@@ -252,7 +252,13 @@ class ModuloConexao:
             async_dispatcher_send(self.hass, SIGNAL_ESTADO.format(self.mac))
 
         if limpeza:
-            return                       # o mapa de entradas deste quadro nao e real
+            # O mapa de entradas deste quadro nao e real para interruptores, mas
+            # pulsador volta sozinho a 0: sem zerar aqui, o proximo toque na
+            # mesma tecla chega igual ao anterior e nao tem borda de subida.
+            self.entradas = [
+                0 if i + 1 in self.teclas else valor for i, valor in enumerate(self.entradas)
+            ]
+            return
 
         anteriores = self.entradas
         if entradas == anteriores:
