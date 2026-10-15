@@ -109,6 +109,11 @@
       "conexao": {
         "name": "Connection"
       }
+    },
+    "sensor": {
+      "ip": {
+        "name": "IP address"
+      }
     }
   }
 }

@@ -2,8 +2,8 @@
 
 Cada modulo vira um dispositivo com uma luz por saida (10 no rele, com brilho
 nos canais do dimmer), uma entidade de evento por tecla de keypad, um sensor
-por entrada de interruptor e um sensor de conexao. Tudo local, por TCP, sem
-nuvem.
+por entrada de interruptor, um sensor de conexao e o endereco IP. Tudo local,
+por TCP, sem nuvem.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ PLATAFORMAS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.EVENT,
     Platform.LIGHT,
+    Platform.SENSOR,
 ]
 
 type ControlArtConfigEntry = ConfigEntry[ControlArtHub]

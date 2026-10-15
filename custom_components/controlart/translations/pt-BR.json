@@ -109,6 +109,11 @@
       "conexao": {
         "name": "Conexão"
       }
+    },
+    "sensor": {
+      "ip": {
+        "name": "Endereço IP"
+      }
     }
   }
 }

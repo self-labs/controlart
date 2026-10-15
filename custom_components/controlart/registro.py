@@ -31,6 +31,7 @@ def esperado(modulos: Iterable[dict[str, Any]]) -> set[tuple[str, str]]:
     for cfg in modulos:
         mac, teclas = cfg[CONF_MAC], set(cfg.get(CONF_TECLAS, ()))
         alvo.add(("binary_sensor", f"controlart_{mac}_conexao"))
+        alvo.add(("sensor", f"controlart_{mac}_ip"))
         for canal in range(1, cfg.get(CONF_SAIDAS, N_SAIDAS) + 1):
             alvo.add(("light", f"controlart_{mac}_luz_{canal:02d}"))
         for entrada in range(1, N_ENTRADAS + 1):

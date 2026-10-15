@@ -41,9 +41,18 @@ def _modulo(nome: str, **atributos) -> types.ModuleType:
 
 
 _modulo("homeassistant")
-_modulo("homeassistant.const", CONF_HOST="host", CONF_MAC="mac", CONF_NAME="name", CONF_PORT="port")
+_modulo(
+    "homeassistant.const",
+    CONF_HOST="host",
+    CONF_MAC="mac",
+    CONF_NAME="name",
+    CONF_PORT="port",
+    EntityCategory=type("EntityCategory", (), {"DIAGNOSTIC": "diagnostic"}),
+)
 _modulo("homeassistant.core", HomeAssistant=object, callback=lambda funcao: funcao)
 _modulo("homeassistant.exceptions", HomeAssistantError=HomeAssistantError)
+
+
 class _Fluxo:
     def __init_subclass__(cls, **kwargs) -> None:   # ConfigFlow recebe domain=
         super().__init_subclass__()
@@ -89,6 +98,7 @@ _modulo(
     ColorMode=ColorMode,
     LightEntity=type("LightEntity", (), {}),
 )
+_modulo("homeassistant.components.sensor", SensorEntity=type("SensorEntity", (), {}))
 
 _pacote = types.ModuleType("controlart")
 _pacote.__path__ = [str(PACOTE)]

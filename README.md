@@ -14,6 +14,7 @@ Cada módulo vira um dispositivo com:
 | `event` | uma por tecla de keypad | Dispara um evento a cada toque, para usar em automações |
 | `binary_sensor` | uma por entrada de interruptor | A posição da alavanca (diagnóstico, desligada por padrão) |
 | `binary_sensor` | 1 | Se o módulo está respondendo |
+| `sensor` | 1 | O endereço IP do módulo (diagnóstico), visível mesmo com ele fora do ar |
 
 Os interruptores e keypads da parede continuam funcionando como sempre: quem aciona as saídas é o módulo. O Home Assistant enxerga tudo o que acontece e manda comandos junto, sem um cancelar o outro.
 
