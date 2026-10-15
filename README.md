@@ -15,6 +15,7 @@ Cada módulo vira um dispositivo com:
 | `binary_sensor` | uma por entrada de interruptor | A posição da alavanca (diagnóstico, desligada por padrão) |
 | `binary_sensor` | 1 | Se o módulo está respondendo |
 | `sensor` | 1 | O endereço IP do módulo (diagnóstico), visível mesmo com ele fora do ar |
+| `button` | 2 | "Acender tudo" e "Apagar tudo": o módulo inteiro com um comando só |
 
 A página da integração também oferece **Baixar diagnóstico**: as últimas linhas trocadas com cada módulo, o firmware e o MAC completo que ele informa, e quantas vezes a conexão caiu. Serve para suporte a distância, sem terminal na rede da instalação.
 

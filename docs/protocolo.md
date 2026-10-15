@@ -58,11 +58,15 @@ O comando é **absoluto e idempotente**: "liga" numa saída já acesa não faz n
 Vistos no driver Hubitat para os mesmos módulos ([hhorigian/hubitat_Controlart_Relays](https://github.com/hhorigian/hubitat_Controlart_Relays)). **Ainda não conferidos num módulo real** por esta integração.
 
 ```
+-> mdcmd_setallonmd,170,187,204      acende todas as saídas deste módulo
+-> mdcmd_setalloffmd,170,187,204     apaga todas as saídas deste módulo
+-> mdcmd_setmasteronmd               sem endereço; responde "MasterOn"
+-> mdcmd_setmasteroffmd              sem endereço; responde "MasterOff"
 -> get_firmware_version             responde uma linha que começa com "VERSION"
 -> get_mac_addr                     responde o MAC completo, numa linha que começa com "MACADDR"
 ```
 
-A integração pede firmware e MAC a cada conexão, para o diagnóstico.
+A integração usa o `setall*` (com endereço) nos botões "Acender tudo" e "Apagar tudo", e pede firmware e MAC a cada conexão, para o diagnóstico. O `setmaster*` fica de fora: sem endereço, e pelo que descreve o driver ELAN da T4Control, ele vale para todos os módulos da instalação.
 
 ## Tipos de entrada (mdConfig)
 
