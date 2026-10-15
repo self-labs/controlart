@@ -84,9 +84,9 @@ Escrita, com o nível no lugar do 0/1:
 
 ```
 -> mdcmd_sendrele,13,149,35,<canal 0-8>,<nível 0-255>
+<- setdmmd,...       (confirmação, em menos de 100 ms)
 ```
 
-Ainda não conferido no módulo real:
+O módulo aceita **qualquer nível** de 0 a 255 e devolve exatamente o nível pedido: 128 e 10 foram conferidos num módulo real. Instalações feitas com outras ferramentas costumam usar só 0, 51, 102, 153, 204 e 255, mas isso é escolha delas, não limite do módulo.
 
-- se ele aceita qualquer nível ou só alguns degraus (as instalações conhecidas usam só 0, 51, 102, 153, 204 e 255);
-- se o par de quadros (real e limpeza) se repete igual ao do relé quando uma entrada muda.
+Ainda não conferido no módulo real: se o par de quadros (real e limpeza) se repete igual ao do relé quando uma entrada muda.
