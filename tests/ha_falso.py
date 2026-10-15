@@ -80,7 +80,12 @@ _modulo(
     async_dispatcher_send=lambda hass, sinal, *args: sinais.append(sinal),
     async_dispatcher_connect=lambda hass, sinal, alvo: (lambda: None),
 )
-_modulo("homeassistant.helpers.device_registry", DeviceInfo=dict)
+_modulo(
+    "homeassistant.helpers.device_registry",
+    CONNECTION_NETWORK_MAC="mac",
+    DeviceInfo=dict,
+    async_get=None,                 # cada teste poe o seu registro falso
+)
 _modulo("homeassistant.helpers.entity_registry")
 _modulo("homeassistant.helpers.entity", Entity=_Base)
 _modulo("homeassistant.helpers.entity_platform", AddEntitiesCallback=object)

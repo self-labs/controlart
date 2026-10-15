@@ -1,9 +1,10 @@
-"""Limpeza do registro quando a configuracao muda.
+"""Registro de entidades e dispositivos.
 
 Tirar um modulo, ou trocar uma entrada de interruptor para tecla (e
 vice-versa), deixa para tras entidades que nenhuma plataforma vai mais
 criar. Aqui elas saem do registro, e o dispositivo de um modulo removido
-deixa de pertencer a esta integracao.
+deixa de pertencer a esta integracao. O firmware que o modulo informa ao
+conectar tambem e gravado aqui, no dispositivo.
 
 Nao renomeia nada e nao mexe em area: o que o usuario ajustou fica.
 """
@@ -21,6 +22,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_SAIDAS, CONF_TECLAS, DOMAIN, N_ENTRADAS, N_SAIDAS
+from .protocolo import ModuloConexao
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,3 +65,15 @@ def limpa_registro(hass: HomeAssistant, entry: ConfigEntry, modulos: list[dict[s
     if removidas:
         _LOGGER.info("ControlArt: %d entidades que a configuracao nao produz mais foram removidas",
                      removidas)
+
+
+@callback
+def atualiza_dispositivo(hass: HomeAssistant, modulo: ModuloConexao) -> None:
+    """Grava no dispositivo o firmware que o modulo acabou de informar."""
+    versao = modulo.versao_firmware
+    if versao is None:
+        return
+    devs = dr.async_get(hass)
+    dispositivo = devs.async_get_device(identifiers={(DOMAIN, modulo.mac)})
+    if dispositivo is not None and dispositivo.sw_version != versao:
+        devs.async_update_device(dispositivo.id, sw_version=versao)

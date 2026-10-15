@@ -27,3 +27,4 @@ CONF_SAIDAS = "outputs"         # saidas ou canais; ausente: N_SAIDAS
 SIGNAL_ESTADO = "controlart_estado_{}"      # por mac
 SIGNAL_TECLA = "controlart_tecla_{}_{}"     # por mac, entrada
 SIGNAL_CONEXAO = "controlart_conexao_{}"    # por mac
+SIGNAL_IDENTIDADE = "controlart_identidade_{}"  # por mac: firmware informado pelo modulo

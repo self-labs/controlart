@@ -8,16 +8,18 @@ por TCP, sem nuvem.
 
 from __future__ import annotations
 
+from functools import partial
 import importlib
 import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import CONF_MODULOS
+from .const import CONF_MODULOS, SIGNAL_IDENTIDADE
 from .protocolo import ControlArtHub
-from .registro import limpa_registro
+from .registro import atualiza_dispositivo, limpa_registro
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,10 +37,21 @@ type ControlArtConfigEntry = ConfigEntry[ControlArtHub]
 async def async_setup_entry(hass: HomeAssistant, entry: ControlArtConfigEntry) -> bool:
     modulos = entry.options.get(CONF_MODULOS, [])
     hub = ControlArtHub(hass, modulos)
+    for modulo in hub.modulos.values():
+        entry.async_on_unload(
+            async_dispatcher_connect(
+                hass,
+                SIGNAL_IDENTIDADE.format(modulo.mac),
+                partial(atualiza_dispositivo, hass, modulo),
+            )
+        )
     hub.iniciar()
     entry.runtime_data = hub
     limpa_registro(hass, entry, modulos)
     await hass.config_entries.async_forward_entry_setups(entry, PLATAFORMAS)
+    # o firmware pode ter chegado antes de o dispositivo existir no registro
+    for modulo in hub.modulos.values():
+        atualiza_dispositivo(hass, modulo)
     entry.async_on_unload(entry.add_update_listener(_recarrega))
     return True
 

@@ -61,6 +61,7 @@ from .const import (
     RECONEXAO_MAX,
     SIGNAL_CONEXAO,
     SIGNAL_ESTADO,
+    SIGNAL_IDENTIDADE,
     SIGNAL_TECLA,
     TIMEOUT_CONFIRMACAO,
     TIMEOUT_RESPOSTA,
@@ -163,6 +164,15 @@ class ModuloConexao:
     def motores(self) -> list[str]:
         """Linhas setbmcb0md como vieram: o significado dos campos nao e conhecido."""
         return list(self._motores)
+
+    @property
+    def versao_firmware(self) -> str | None:
+        """Firmware como o mdConfig mostra: 3027 vira 3.027 (o docs/protocolo.md cita 3.022)."""
+        if self.firmware is None:
+            return None
+        if self.firmware.isdigit() and len(self.firmware) > 1:
+            return f"{self.firmware[0]}.{self.firmware[1:]}"
+        return self.firmware.removeprefix("VERSION").strip()
 
     def diagnostico(self) -> dict[str, Any]:
         return {
@@ -423,7 +433,10 @@ class ModuloConexao:
         elif cabeca == "setbmcb0md":
             self._motores.append(texto)  # configuracao de motor: so para o diagnostico
         elif texto.isdigit() or texto.startswith("VERSION"):
-            self.firmware = texto        # o modulo responde so o numero; o driver Hubitat espera VERSION
+            # o modulo responde so o numero; o driver Hubitat espera VERSION
+            if texto != self.firmware:
+                self.firmware = texto
+                async_dispatcher_send(self.hass, SIGNAL_IDENTIDADE.format(self.mac))
         elif texto.lower().startswith("macaddr"):
             self.mac_informado = texto
         elif texto == "Parse Error!":
