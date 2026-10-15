@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "ControlArt",
-        "description": "Primeiro módulo cabeado a relé. Basta o IP: o módulo informa o próprio MAC. Os outros se adicionam depois, em Configurar.",
+        "description": "Primeiro módulo cabeado, relé ou dimmer. Basta o IP: o módulo informa o próprio MAC e o tipo. Os outros se adicionam depois, em Configurar.",
         "data": {
           "host": "Endereço IP",
           "port": "Porta TCP",
@@ -85,6 +85,9 @@
     "light": {
       "saida": {
         "name": "Saída {numero}"
+      },
+      "canal": {
+        "name": "Canal {numero}"
       }
     },
     "event": {

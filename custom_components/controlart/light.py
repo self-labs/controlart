@@ -1,10 +1,11 @@
-"""As 10 saidas de cada modulo como luzes liga/desliga.
+"""As saidas de cada modulo como luzes.
 
-O rele e liga/desliga (o dimmer ControlArt e outro produto), entao entram
-como `light` com ColorMode.ONOFF. Isso permite "apagar as luzes da cozinha"
-por area, voz e cartoes de luz.
+O rele e liga/desliga, entao suas 10 saidas entram como `light` com
+ColorMode.ONOFF. Os canais do dimmer entram com brilho: o nivel do modulo
+(0 a 255) e o proprio brilho do Home Assistant, na mesma escala. Isso permite
+"apagar as luzes da cozinha" por area, voz e cartoes de luz.
 
-O estado vem sempre do modulo: apos o comando esperamos o setcmd de
+O estado vem sempre do modulo: apos o comando esperamos o quadro de
 confirmacao, que chega em milissegundos. Sem estado otimista.
 """
 
@@ -12,12 +13,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.light import ColorMode, LightEntity
+from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import N_SAIDAS
+from .const import TIPO_DIMMER
 from .entidade import EntidadeControlArt
 from .protocolo import ControlArtHub, ModuloConexao
 
@@ -27,9 +28,9 @@ async def async_setup_entry(
 ) -> None:
     hub: ControlArtHub = entry.runtime_data
     async_add_entities(
-        Saida(modulo, canal)
+        (CanalDimmer if modulo.tipo == TIPO_DIMMER else Saida)(modulo, canal)
         for modulo in hub.modulos.values()
-        for canal in range(1, N_SAIDAS + 1)
+        for canal in range(1, modulo.n_saidas + 1)
     )
 
 
@@ -55,3 +56,24 @@ class Saida(EntidadeControlArt, LightEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._modulo.envia_rele(self._canal, False)
+
+
+class CanalDimmer(Saida):
+    """Um canal do dimmer. Sem brilho pedido, acende no ultimo nivel visto."""
+
+    _attr_translation_key = "canal"
+    _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+
+    @property
+    def brightness(self) -> int:
+        return self._modulo.saidas[self._canal - 1]
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        nivel = kwargs.get(ATTR_BRIGHTNESS)
+        if nivel is None:
+            nivel = self._modulo.nivel_ao_ligar(self._canal)
+        await self._modulo.envia_nivel(self._canal, nivel)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._modulo.envia_nivel(self._canal, 0)

@@ -1,8 +1,9 @@
 """Cadastro dos modulos pela interface.
 
 So o IP e pedido: o modulo e perguntado pelo endereco de difusao e responde
-com o proprio MAC, que e o endereco dos comandos. O primeiro modulo entra no
-fluxo de configuracao; os demais, pelas opcoes (Configurar).
+com o proprio MAC, que e o endereco dos comandos. O cabecalho da resposta diz
+se e rele ou dimmer, e o tamanho dela, quantas saidas tem. O primeiro modulo
+entra no fluxo de configuracao; os demais, pelas opcoes (Configurar).
 """
 
 from __future__ import annotations
@@ -26,8 +27,18 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import CONF_MODULOS, CONF_TECLAS, DOMAIN, N_ENTRADAS, PORTA_PADRAO
-from .protocolo import SemConexao, SemResposta, sonda
+from .const import (
+    CONF_MODULOS,
+    CONF_SAIDAS,
+    CONF_TECLAS,
+    CONF_TIPO,
+    DOMAIN,
+    N_ENTRADAS,
+    N_SAIDAS,
+    PORTA_PADRAO,
+    TIPO_RELE,
+)
+from .protocolo import Identidade, SemConexao, SemResposta, sonda
 
 SELETOR_TECLAS = SelectSelector(
     SelectSelectorConfig(
@@ -63,22 +74,28 @@ async def _monta_modulo(
     host = dados[CONF_HOST].strip()
     porta = int(dados[CONF_PORT])
     if atual and host == atual[CONF_HOST] and porta == atual[CONF_PORT]:
-        mac = atual[CONF_MAC]                 # so mudou nome ou teclas: nao precisa perguntar
+        # so mudou nome ou teclas: nao precisa perguntar
+        identidade = Identidade(
+            atual[CONF_MAC], atual.get(CONF_TIPO, TIPO_RELE), atual.get(CONF_SAIDAS, N_SAIDAS)
+        )
     else:
         try:
-            mac = await sonda(host, porta)
+            identidade = await sonda(host, porta)
         except SemConexao:
             return None, "cannot_connect"
         except SemResposta:
             return None, "sem_resposta"
-        if atual and mac != atual[CONF_MAC]:
+        if atual and identidade.mac != atual[CONF_MAC]:
             return None, "mac_diferente"
+    mac = identidade.mac
     if any(m[CONF_MAC] == mac for m in outros):
         return None, "ja_cadastrado"
     return {
         CONF_HOST: host,
         CONF_PORT: porta,
         CONF_MAC: mac,
+        CONF_TIPO: identidade.tipo,
+        CONF_SAIDAS: identidade.saidas,
         CONF_NAME: dados[CONF_NAME].strip() or f"ControlArt {mac}",
         CONF_TECLAS: sorted(int(n) for n in dados.get(CONF_TECLAS, [])),
     }, None

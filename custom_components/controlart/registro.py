@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_TECLAS, DOMAIN, N_ENTRADAS, N_SAIDAS
+from .const import CONF_SAIDAS, CONF_TECLAS, DOMAIN, N_ENTRADAS, N_SAIDAS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def esperado(modulos: Iterable[dict[str, Any]]) -> set[tuple[str, str]]:
     for cfg in modulos:
         mac, teclas = cfg[CONF_MAC], set(cfg.get(CONF_TECLAS, ()))
         alvo.add(("binary_sensor", f"controlart_{mac}_conexao"))
-        for canal in range(1, N_SAIDAS + 1):
+        for canal in range(1, cfg.get(CONF_SAIDAS, N_SAIDAS) + 1):
             alvo.add(("light", f"controlart_{mac}_luz_{canal:02d}"))
         for entrada in range(1, N_ENTRADAS + 1):
             if entrada in teclas:

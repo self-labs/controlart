@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "ControlArt",
-        "description": "First wired relay module. Only the IP is needed: the module reports its own MAC. Add the others later under Configure.",
+        "description": "First wired module, relay or dimmer. Only the IP is needed: the module reports its own MAC and type. Add the others later under Configure.",
         "data": {
           "host": "IP address",
           "port": "TCP port",
@@ -85,6 +85,9 @@
     "light": {
       "saida": {
         "name": "Output {numero}"
+      },
+      "canal": {
+        "name": "Channel {numero}"
       }
     },
     "event": {

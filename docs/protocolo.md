@@ -1,6 +1,6 @@
-# Protocolo do módulo cabeado relé
+# Protocolo dos módulos cabeados relé e dimmer
 
-Notas levantadas observando módulos reais (firmware 3.022) e o terminal do mdConfig. Não há documentação oficial. O que está aqui foi conferido na prática, mas pode variar em outros firmwares.
+Notas levantadas observando módulos reais (firmware 3.022) e o terminal do mdConfig. Não há documentação oficial. O que está aqui foi conferido na prática, mas pode variar em outros firmwares. O dimmer tem seção própria no fim; o resto vale para os dois.
 
 ## Transporte
 
@@ -66,3 +66,27 @@ Os vínculos entre entrada e saída ficam gravados no módulo. Cada vínculo tem
 - Não há comando conhecido para disparar remotamente a cena de uma tecla. `mdcmd_sendcmd`, usado pelo mdConfig, grava a programação; não aciona.
 - Não confie em "a entrada mudou" num quadro isolado; veja a regra do quadro de limpeza acima.
 - Um módulo sem energia ou com o cabo solto não fecha a conexão TCP. Só dá para perceber a queda pedindo o estado e esperando a resposta.
+
+## Módulo dimmer
+
+Mesmo transporte, mesmo endereço e mesmos comandos do relé. Muda o cabeçalho do quadro de estado e o significado dos valores das saídas.
+
+```
+-> mdcmd_getmd,13,149,35
+<- setdmmd,0D-95-23,1,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0
+```
+
+- `setdmmd` no lugar de `setcmd`: o cabeçalho diz o tipo do módulo, então o cadastro reconhece o dimmer sozinho.
+- Depois do MAC vêm as mesmas **12 entradas** e, em seguida, um **nível por canal**, de 0 (apagado) a 255. O módulo conhecido tem **9 canais**; a integração lê a quantidade do tamanho do quadro.
+- Não vieram linhas `setbmcb0md` depois do estado.
+
+Escrita, com o nível no lugar do 0/1:
+
+```
+-> mdcmd_sendrele,13,149,35,<canal 0-8>,<nível 0-255>
+```
+
+Ainda não conferido no módulo real:
+
+- se ele aceita qualquer nível ou só alguns degraus (as instalações conhecidas usam só 0, 51, 102, 153, 204 e 255);
+- se o par de quadros (real e limpeza) se repete igual ao do relé quando uma entrada muda.

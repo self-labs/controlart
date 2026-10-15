@@ -1,6 +1,6 @@
 # ControlArt para Home Assistant
 
-Integração local para os **módulos cabeados a relé da ControlArt** (10 saídas a relé, 12 entradas digitais), configurados pelo mdConfig. Fala direto com cada módulo por TCP na rede local: sem nuvem, sem Node-RED, sem outro Home Assistant no meio.
+Integração local para os **módulos cabeados da ControlArt**, configurados pelo mdConfig: o **relé** (10 saídas a relé, 12 entradas digitais) e o **dimmer** (canais com nível de 0 a 255, 12 entradas digitais). Fala direto com cada módulo por TCP na rede local: sem nuvem, sem Node-RED, sem outro Home Assistant no meio.
 
 *English summary below.*
 
@@ -10,7 +10,7 @@ Cada módulo vira um dispositivo com:
 
 | Entidade | Quantas | Para quê |
 |---|---|---|
-| `light` | 10 | As saídas. Liga e desliga, e o estado vem sempre do módulo |
+| `light` | 10 no relé, uma por canal no dimmer | As saídas. Liga e desliga (com brilho, no dimmer), e o estado vem sempre do módulo |
 | `event` | uma por tecla de keypad | Dispara um evento a cada toque, para usar em automações |
 | `binary_sensor` | uma por entrada de interruptor | A posição da alavanca (diagnóstico, desligada por padrão) |
 | `binary_sensor` | 1 | Se o módulo está respondendo |
@@ -27,7 +27,7 @@ Os interruptores e keypads da parede continuam funcionando como sempre: quem aci
 
 *Configurações → Dispositivos e serviços → Adicionar integração → ControlArt.*
 
-1. Informe o **IP** do módulo. A porta é 4998, salvo se você mudou no mdConfig. O MAC não precisa: o módulo informa o próprio MAC quando é consultado.
+1. Informe o **IP** do módulo. A porta é 4998, salvo se você mudou no mdConfig. O MAC e o tipo não precisam: o módulo informa os dois quando é consultado.
 2. Marque quais **entradas são teclas de keypad** (pulsadores). As demais são tratadas como interruptores comuns.
 3. Para os outros módulos: na integração, **Configurar → Adicionar um módulo**.
 
@@ -40,11 +40,11 @@ O módulo precisa de **IP fixo** (reserva no roteador ou IP estático no mdConfi
 - **Tecla de keypad numa automação**: use o gatilho de *estado* na entidade `event`. Cada toque muda o estado para o horário do toque. Filtre `not_to: [unknown, unavailable]` para não disparar quando o Home Assistant reinicia.
 - **Interruptor comum numa automação**: a posição da alavanca **não** diz se a luz está acesa. O módulo inverte a saída a cada movimento, então as duas coisas se desencontram. Dispare em *qualquer* mudança do sensor da entrada e use `toggle`.
 - **Cenas do keypad**: o módulo executa a cena programada no mdConfig quando a tecla é apertada na parede. Não existe comando para disparar essa cena remotamente. Para acioná-la pelo Home Assistant, reproduza-a num script.
+- **Dimmer aceso sem brilho escolhido** (botão, voz, "acender a sala"): o canal volta ao último nível visto desde que o Home Assistant iniciou; se nunca acendeu, vai ao máximo.
 - **Comando que o módulo não confirma** vira erro no Home Assistant em vez de passar em silêncio. Um módulo que para de responder derruba a conexão e as entidades ficam indisponíveis até ele voltar.
 
 ## Limitações
 
-- Só o módulo **relé** (10 saídas). O dimmer ControlArt é outro produto, com outro protocolo.
 - Motores e cortinas configurados no módulo são ignorados.
 - A integração não altera a programação do módulo; isso continua sendo feito no mdConfig.
 
@@ -54,6 +54,6 @@ O protocolo, com as armadilhas que apareceram pelo caminho, está descrito em [d
 
 ## English summary
 
-Local-push Home Assistant integration for **ControlArt wired relay modules** (10 relay outputs, 12 digital inputs). Each module becomes a device with 10 `light` entities, one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, and a connectivity sensor. Setup only asks for the module's IP; the module reports its own MAC. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
+Local-push Home Assistant integration for **ControlArt wired modules**: the relay module (10 relay outputs, 12 digital inputs) and the dimmer module (channels with a 0 to 255 level, 12 digital inputs). Each module becomes a device with one `light` entity per output (with brightness on the dimmer), one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, and a connectivity sensor. Setup only asks for the module's IP; the module reports its own MAC and type. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
 
 Not affiliated with ControlArt. Use at your own risk.

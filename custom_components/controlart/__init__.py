@@ -1,8 +1,9 @@
-"""Integracao ControlArt - modulos cabeados de iluminacao a rele.
+"""Integracao ControlArt - modulos cabeados de iluminacao, rele e dimmer.
 
-Cada modulo vira um dispositivo com 10 luzes (as saidas), uma entidade de
-evento por tecla de keypad, um sensor por entrada de interruptor e um sensor
-de conexao. Tudo local, por TCP, sem nuvem.
+Cada modulo vira um dispositivo com uma luz por saida (10 no rele, com brilho
+nos canais do dimmer), uma entidade de evento por tecla de keypad, um sensor
+por entrada de interruptor e um sensor de conexao. Tudo local, por TCP, sem
+nuvem.
 """
 
 from __future__ import annotations

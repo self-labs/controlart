@@ -10,12 +10,19 @@ TIMEOUT_SONDA = 5.0            # s · para o modulo responder ao ser cadastrado
 TIMEOUT_RESPOSTA = 10.0        # s · para responder ao getmd; sem resposta, reconecta
 TIMEOUT_CONFIRMACAO = 3.0      # s · para o quadro que confirma um comando
 
-N_SAIDAS = 10
+N_SAIDAS = 10                  # do rele; o dimmer informa os canais no proprio quadro
 N_ENTRADAS = 12
+
+# tipo do modulo, reconhecido pelo cabecalho do quadro de estado
+TIPO_RELE = "relay"
+TIPO_DIMMER = "dimmer"
+CABECALHOS = {"setcmd": TIPO_RELE, "setdmmd": TIPO_DIMMER}
 
 # chaves da configuracao guardada na entrada
 CONF_MODULOS = "modules"
 CONF_TECLAS = "keypad_inputs"   # entradas ligadas a teclas de keypad (pulsadores)
+CONF_TIPO = "module_type"       # ausente nos cadastros anteriores ao dimmer: rele
+CONF_SAIDAS = "outputs"         # saidas ou canais; ausente: N_SAIDAS
 
 SIGNAL_ESTADO = "controlart_estado_{}"      # por mac
 SIGNAL_TECLA = "controlart_tecla_{}_{}"     # por mac, entrada

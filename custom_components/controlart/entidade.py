@@ -7,8 +7,10 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN, SIGNAL_CONEXAO, SIGNAL_ESTADO
+from .const import DOMAIN, SIGNAL_CONEXAO, SIGNAL_ESTADO, TIPO_DIMMER, TIPO_RELE
 from .protocolo import ModuloConexao
+
+MODELOS = {TIPO_RELE: "Módulo Cabeado Relé", TIPO_DIMMER: "Módulo Cabeado Dimmer"}
 
 
 class EntidadeControlArt(Entity):
@@ -23,7 +25,7 @@ class EntidadeControlArt(Entity):
             identifiers={(DOMAIN, modulo.mac)},
             name=modulo.nome,
             manufacturer="ControlArt",
-            model="Módulo Cabeado Relé",
+            model=MODELOS[modulo.tipo],
         )
 
     def _sinais(self) -> tuple[str, ...]:

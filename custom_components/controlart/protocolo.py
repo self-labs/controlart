@@ -3,9 +3,13 @@
 Protocolo (texto puro sobre TCP, porta 4998 por padrao):
 
   enviado    mdcmd_getmd,<a>,<b>,<c>
-  recebido   setcmd,<mac>,<12 entradas>,<10 saidas>
+  recebido   setcmd,<mac>,<12 entradas>,<10 saidas>      (rele, 0 ou 1)
+             setdmmd,<mac>,<12 entradas>,<N canais>      (dimmer, 0 a 255)
              setbmcb0md,<mac>,...        (config de motor, ignorada)
              Parse Error!                (nome de comando desconhecido)
+
+O cabecalho do quadro diz o tipo do modulo, e o dimmer informa quantos
+canais tem pelo tamanho do quadro (9 no modulo conhecido).
 
 <a>,<b>,<c> sao os tres ultimos bytes do MAC em decimal (AA-BB-CC vira
 170,187,204). O endereco 255,255,255 funciona como difusao: o modulo responde
@@ -23,6 +27,7 @@ limpeza nao reflete a realidade das entradas e e descartado.
 Escrita:
 
   mdcmd_sendrele,<a>,<b>,<c>,<canal 0-9>,<0|1>
+  mdcmd_sendrele,<a>,<b>,<c>,<canal>,<nivel 0-255>      (dimmer)
 
 E absoluta e idempotente: mandar "liga" num circuito ja aceso nao faz nada.
 O modulo confirma a mudanca com um setcmd em poucos milissegundos, entao as
@@ -35,7 +40,7 @@ import asyncio
 from collections.abc import Iterable
 import logging
 import time
-from typing import Any
+from typing import Any, NamedTuple
 
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME, CONF_PORT
 from homeassistant.core import HomeAssistant
@@ -43,7 +48,10 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
+    CABECALHOS,
+    CONF_SAIDAS,
     CONF_TECLAS,
+    CONF_TIPO,
     INTERVALO_GETMD,
     JANELA_LIMPEZA,
     N_ENTRADAS,
@@ -55,7 +63,10 @@ from .const import (
     TIMEOUT_CONFIRMACAO,
     TIMEOUT_RESPOSTA,
     TIMEOUT_SONDA,
+    TIPO_RELE,
 )
+
+NIVEL_MAX = 255
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,8 +84,16 @@ def endereco(mac: str) -> str:
     return ",".join(str(int(parte, 16)) for parte in mac.split("-"))
 
 
-async def sonda(host: str, porta: int) -> str:
-    """Pergunta ao modulo quem ele e e devolve o MAC curto (AA-BB-CC)."""
+class Identidade(NamedTuple):
+    """O que o cadastro descobre perguntando ao modulo."""
+
+    mac: str        # curto, AA-BB-CC
+    tipo: str       # TIPO_RELE ou TIPO_DIMMER
+    saidas: int     # saidas do rele ou canais do dimmer
+
+
+async def sonda(host: str, porta: int) -> Identidade:
+    """Pergunta ao modulo quem ele e: MAC, tipo e quantas saidas tem."""
     try:
         reader, writer = await asyncio.wait_for(
             asyncio.open_connection(host, porta), TIMEOUT_SONDA
@@ -87,8 +106,12 @@ async def sonda(host: str, porta: int) -> str:
         async with asyncio.timeout(TIMEOUT_SONDA):
             while linha := await reader.readline():
                 partes = linha.decode("latin-1").strip().split(",")
-                if partes[0] == "setcmd" and len(partes) == 2 + N_ENTRADAS + N_SAIDAS:
-                    return partes[1].upper()
+                tipo = CABECALHOS.get(partes[0])
+                saidas = len(partes) - 2 - N_ENTRADAS
+                if tipo == TIPO_RELE and saidas != N_SAIDAS:
+                    continue
+                if tipo and saidas > 0:
+                    return Identidade(partes[1].upper(), tipo, saidas)
     except (OSError, asyncio.TimeoutError) as err:
         raise SemResposta from err
     finally:
@@ -106,9 +129,12 @@ class ModuloConexao:
         self.porta: int = cfg[CONF_PORT]
         self.nome: str = cfg[CONF_NAME]
         self.teclas: frozenset[int] = frozenset(cfg.get(CONF_TECLAS, ()))
+        self.tipo: str = cfg.get(CONF_TIPO, TIPO_RELE)
+        self.n_saidas: int = cfg.get(CONF_SAIDAS, N_SAIDAS)
         self.addr = endereco(self.mac)
-        self.saidas: list[int] = [0] * N_SAIDAS
+        self.saidas: list[int] = [0] * self.n_saidas
         self.entradas: list[int] = [0] * N_ENTRADAS
+        self._acesos: list[int] = [NIVEL_MAX] * self.n_saidas   # ultimo nivel > 0 visto
         self.conectado = False
         self.tem_estado = False
         self._writer: asyncio.StreamWriter | None = None
@@ -197,17 +223,35 @@ class ModuloConexao:
     async def envia_rele(self, canal: int, ligado: bool) -> None:
         """Liga ou desliga um circuito. `canal` vai de 1 a 10.
 
-        Comando absoluto: repetir o mesmo estado nao tem efeito. Espera o
-        quadro em que a saida muda: o modulo engole em silencio um comando
-        com endereco ou argumento errado, e sem esperar a mudanca o erro
-        passaria despercebido. Se a saida ja esta no valor pedido, nao ha
-        quadro a esperar.
+        Comando absoluto: repetir o mesmo estado nao tem efeito.
         """
-        if not 1 <= canal <= N_SAIDAS:
-            raise ValueError(f"canal fora da faixa 1-{N_SAIDAS}: {canal}")
+        await self._envia(canal, 1 if ligado else 0)
+
+    async def envia_nivel(self, canal: int, nivel: int) -> None:
+        """Poe um canal do dimmer no nivel de 0 (apagado) a 255.
+
+        Mesmo comando do rele, com o nivel no lugar do 0/1. Se o modulo
+        arredondar o nivel, vale o que vier no quadro de confirmacao.
+        """
+        if not 0 <= nivel <= NIVEL_MAX:
+            raise ValueError(f"nivel fora da faixa 0-{NIVEL_MAX}: {nivel}")
+        await self._envia(canal, nivel)
+
+    def nivel_ao_ligar(self, canal: int) -> int:
+        """Nivel para acender sem brilho pedido: o ultimo aceso, ou o maximo."""
+        return self._acesos[canal - 1]
+
+    async def _envia(self, canal: int, valor: int) -> None:
+        """Manda o comando e espera o quadro em que a saida muda.
+
+        O modulo engole em silencio um comando com endereco ou argumento
+        errado, entao sem esperar a mudanca o erro passaria despercebido.
+        Se a saida ja esta no valor pedido, nao ha quadro a esperar.
+        """
+        if not 1 <= canal <= self.n_saidas:
+            raise ValueError(f"canal fora da faixa 1-{self.n_saidas}: {canal}")
         if self._writer is None or not self.conectado:
             raise HomeAssistantError(f"ControlArt {self.nome} ({self.host}) esta desconectado")
-        valor = 1 if ligado else 0
         anterior = self.saidas[canal - 1]
         mudanca = self._mudanca
         comando = f"mdcmd_sendrele,{self.addr},{canal - 1},{valor}\r\n"
@@ -242,9 +286,15 @@ class ModuloConexao:
     def _trata_linha(self, texto: str) -> None:
         partes = texto.split(",")
         cabeca = partes[0]
-        if cabeca == "setcmd":
+        if cabeca in CABECALHOS:
             if len(partes) > 1 and partes[1].upper() != self.mac:
                 _LOGGER.debug("ControlArt %s: quadro de outro modulo (%s)", self.nome, partes[1])
+                return
+            if CABECALHOS[cabeca] != self.tipo:
+                _LOGGER.warning(
+                    "ControlArt %s: quadro %s, mas o modulo foi cadastrado como %s; "
+                    "cadastre de novo", self.nome, cabeca, self.tipo,
+                )
                 return
             self._trata_setcmd(partes[2:])
         elif cabeca == "setbmcb0md":
@@ -255,10 +305,11 @@ class ModuloConexao:
             _LOGGER.debug("ControlArt %s: quadro ignorado %r", self.nome, texto)
 
     def _trata_setcmd(self, campos: list[str]) -> None:
-        if len(campos) != N_ENTRADAS + N_SAIDAS:
+        """Quadro de estado, do rele (setcmd) ou do dimmer (setdmmd)."""
+        if len(campos) != N_ENTRADAS + self.n_saidas:
             _LOGGER.warning(
-                "ControlArt %s: setcmd com %d campos (esperados %d)",
-                self.nome, len(campos), N_ENTRADAS + N_SAIDAS,
+                "ControlArt %s: quadro de estado com %d campos (esperados %d)",
+                self.nome, len(campos), N_ENTRADAS + self.n_saidas,
             )
             return
         try:
@@ -276,6 +327,7 @@ class ModuloConexao:
             and agora - self._ultimo_quadro < JANELA_LIMPEZA
         )
         self._ultimo_quadro = agora
+        self._acesos = [nivel or anterior for nivel, anterior in zip(saidas, self._acesos)]
 
         if not self.tem_estado:
             self.entradas, self.saidas = entradas, saidas
