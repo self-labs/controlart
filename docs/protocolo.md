@@ -53,6 +53,17 @@ O quadro de limpeza não reflete as entradas de verdade e precisa ser descartado
 
 O comando é **absoluto e idempotente**: "liga" numa saída já acesa não faz nada. Não existe um comando de inverter.
 
+## Outros comandos
+
+Vistos no driver Hubitat para os mesmos módulos ([hhorigian/hubitat_Controlart_Relays](https://github.com/hhorigian/hubitat_Controlart_Relays)). **Ainda não conferidos num módulo real** por esta integração.
+
+```
+-> get_firmware_version             responde uma linha que começa com "VERSION"
+-> get_mac_addr                     responde o MAC completo, numa linha que começa com "MACADDR"
+```
+
+A integração pede firmware e MAC a cada conexão, para o diagnóstico.
+
 ## Tipos de entrada (mdConfig)
 
 - **Interruptor retentivo**: a alavanca fica numa posição. O módulo inverte as saídas vinculadas a **cada transição**, então a posição da alavanca não indica se a luz está acesa.

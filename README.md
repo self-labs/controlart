@@ -16,6 +16,8 @@ Cada módulo vira um dispositivo com:
 | `binary_sensor` | 1 | Se o módulo está respondendo |
 | `sensor` | 1 | O endereço IP do módulo (diagnóstico), visível mesmo com ele fora do ar |
 
+A página da integração também oferece **Baixar diagnóstico**: as últimas linhas trocadas com cada módulo, o firmware e o MAC completo que ele informa, e quantas vezes a conexão caiu. Serve para suporte a distância, sem terminal na rede da instalação.
+
 Os interruptores e keypads da parede continuam funcionando como sempre: quem aciona as saídas é o módulo. O Home Assistant enxerga tudo o que acontece e manda comandos junto, sem um cancelar o outro.
 
 ## Instalação
@@ -46,7 +48,7 @@ O módulo precisa de **IP fixo** (reserva no roteador ou IP estático no mdConfi
 
 ## Limitações
 
-- Motores e cortinas configurados no módulo são ignorados.
+- Motores e cortinas configurados no módulo são ignorados: o comando de motor não é conhecido. As linhas de configuração de motor que o módulo manda aparecem no diagnóstico.
 - A integração não altera a programação do módulo; isso continua sendo feito no mdConfig.
 
 O protocolo, com as armadilhas que apareceram pelo caminho, está descrito em [docs/protocolo.md](docs/protocolo.md).

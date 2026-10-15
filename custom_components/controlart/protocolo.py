@@ -37,7 +37,9 @@ entidades nao precisam de estado otimista - esperamos a confirmacao real.
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from collections.abc import Iterable
+from datetime import datetime
 import logging
 import time
 from typing import Any, NamedTuple
@@ -67,6 +69,11 @@ from .const import (
 )
 
 NIVEL_MAX = 255
+LINHAS_GUARDADAS = 50           # para o diagnostico: o bastante para alguns minutos de uso
+
+# Identificacao pedida na conexao. Nao vem do proprio repositorio: e o que o
+# driver Hubitat da ControlArt (hhorigian/hubitat_Controlart_Relays) manda.
+PEDIDOS_IDENTIFICACAO = ("get_firmware_version", "get_mac_addr")
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -142,6 +149,42 @@ class ModuloConexao:
         self._parar = asyncio.Event()
         self._mudanca = asyncio.Event()     # renovado a cada mudanca das saidas
         self._ultimo_quadro = 0.0
+        # so para o diagnostico
+        self.linhas: deque[tuple[str, str, str]] = deque(maxlen=LINHAS_GUARDADAS)
+        self.firmware: str | None = None
+        self.mac_completo: str | None = None
+        self._motores: deque[str] = deque(maxlen=5)
+        self.conexoes = 0
+        self.ultima_queda: str | None = None
+
+    @property
+    def motores(self) -> list[str]:
+        """Linhas setbmcb0md como vieram: o significado dos campos nao e conhecido."""
+        return list(self._motores)
+
+    def diagnostico(self) -> dict[str, Any]:
+        return {
+            "nome": self.nome,
+            "host": self.host,
+            "porta": self.porta,
+            "mac": self.mac,
+            "tipo": self.tipo,
+            "saidas_ou_canais": self.n_saidas,
+            "teclas": sorted(self.teclas),
+            "conectado": self.conectado,
+            "tem_estado": self.tem_estado,
+            "entradas": self.entradas,
+            "saidas": self.saidas,
+            "firmware": self.firmware,
+            "mac_completo": self.mac_completo,
+            "motores": self.motores,
+            "conexoes": self.conexoes,
+            "ultima_queda": self.ultima_queda,
+            "linhas": [f"{hora} {sentido} {texto}" for hora, sentido, texto in self.linhas],
+        }
+
+    def _registra(self, sentido: str, texto: str) -> None:
+        self.linhas.append((datetime.now().isoformat(timespec="milliseconds"), sentido, texto))
 
     # ------------------------------------------------------------- ciclo
     def iniciar(self) -> None:
@@ -172,6 +215,7 @@ class ModuloConexao:
                     "ControlArt %s (%s): conexao perdida (%s); nova tentativa em %ds",
                     self.nome, self.host, err, espera,
                 )
+                self.ultima_queda = f"{datetime.now().isoformat(timespec='seconds')} {err!r}"
             self._marca_desconectado()
             try:
                 await asyncio.wait_for(self._parar.wait(), timeout=espera)
@@ -184,10 +228,13 @@ class ModuloConexao:
         reader, writer = await asyncio.open_connection(self.host, self.porta)
         self._writer = writer
         self.conectado = True
+        self.conexoes += 1
         _LOGGER.info("ControlArt %s conectado em %s:%d", self.nome, self.host, self.porta)
         async_dispatcher_send(self.hass, SIGNAL_CONEXAO.format(self.mac))
 
         await self._pede_estado()
+        for pedido in PEDIDOS_IDENTIFICACAO:
+            await self._escreve(pedido)
         aguardando = True                       # o getmd precisa de resposta
         try:
             while not self._parar.is_set():
@@ -217,8 +264,14 @@ class ModuloConexao:
     async def _pede_estado(self) -> None:
         if self._writer is None:
             return
-        self._writer.write(f"mdcmd_getmd,{self.addr}\r\n".encode("ascii"))
+        await self._escreve(f"mdcmd_getmd,{self.addr}")
+
+    async def _escreve(self, comando: str) -> None:
+        """Manda uma linha ao modulo. Quem chama garante que ha conexao."""
+        assert self._writer is not None
+        self._writer.write(f"{comando}\r\n".encode("ascii"))
         await self._writer.drain()
+        self._registra("->", comando)
 
     async def envia_rele(self, canal: int, ligado: bool) -> None:
         """Liga ou desliga um circuito. `canal` vai de 1 a 10.
@@ -254,10 +307,9 @@ class ModuloConexao:
             raise HomeAssistantError(f"ControlArt {self.nome} ({self.host}) esta desconectado")
         anterior = self.saidas[canal - 1]
         mudanca = self._mudanca
-        comando = f"mdcmd_sendrele,{self.addr},{canal - 1},{valor}\r\n"
-        self._writer.write(comando.encode("ascii"))
-        await self._writer.drain()
-        _LOGGER.debug("ControlArt %s: enviado %s", self.nome, comando.strip())
+        comando = f"mdcmd_sendrele,{self.addr},{canal - 1},{valor}"
+        await self._escreve(comando)
+        _LOGGER.debug("ControlArt %s: enviado %s", self.nome, comando)
         if valor == anterior:
             return
         try:
@@ -284,6 +336,7 @@ class ModuloConexao:
 
     # --------------------------------------------------------- protocolo
     def _trata_linha(self, texto: str) -> None:
+        self._registra("<-", texto)
         partes = texto.split(",")
         cabeca = partes[0]
         if cabeca in CABECALHOS:
@@ -298,7 +351,11 @@ class ModuloConexao:
                 return
             self._trata_setcmd(partes[2:])
         elif cabeca == "setbmcb0md":
-            return                       # configuracao de motor; nao usamos
+            self._motores.append(texto)  # configuracao de motor: so para o diagnostico
+        elif texto.startswith("VERSION"):
+            self.firmware = texto
+        elif texto.upper().startswith("MACADDR"):
+            self.mac_completo = texto
         elif texto == "Parse Error!":
             _LOGGER.warning("ControlArt %s recusou a sintaxe de um comando", self.nome)
         else:
