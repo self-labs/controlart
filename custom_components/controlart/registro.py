@@ -61,6 +61,10 @@ def limpa_registro(hass: HomeAssistant, entry: ConfigEntry, modulos: list[dict[s
     for dev in dr.async_entries_for_config_entry(devs, entry.entry_id):
         if not any(dom == DOMAIN and ident in macs for dom, ident in dev.identifiers):
             devs.async_update_device(dev.id, remove_config_entry_id=entry.entry_id)
+        elif dev.connections:
+            # dispositivo criado antes da 2026.10.1, com os tres bytes como MAC de
+            # rede: o registro soma `connections` e nunca tira, entao sai aqui
+            devs.async_update_device(dev.id, new_connections=set())
 
     if removidas:
         _LOGGER.info("ControlArt: %d entidades que a configuracao nao produz mais foram removidas",
