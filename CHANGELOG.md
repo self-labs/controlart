@@ -9,6 +9,12 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.2] - 2026-10-18
+
+### 🐛 Fixed
+
+- **O MAC voltou ao card do dispositivo.** A 2026.10.1 trouxe do projeto original a remoção dele e ainda apagava o MAC dos dispositivos já cadastrados no primeiro início. O MAC (os três bytes que o módulo informa, os mesmos do mdConfig) é o que diz qual módulo é qual, e fica no card. Quem chegou a rodar a 2026.10.1 recebe o MAC de volta no primeiro início.
+
 ## [2026.10.1] - 2026-10-18
 
 Primeira versão como projeto próprio da Self-Labs, inspirado no
@@ -53,7 +59,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.1...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.2...HEAD
+[2026.10.2]: https://github.com/self-labs/controlart/compare/v2026.10.1...v2026.10.2
 [2026.10.1]: https://github.com/self-labs/controlart/compare/v1.0.1...v2026.10.1
 [1.0.1]: https://github.com/self-labs/controlart/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/self-labs/controlart/releases/tag/v1.0.0

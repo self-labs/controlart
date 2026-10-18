@@ -12,8 +12,8 @@ contribution flow back anymore: the `upstream` remote is kept only to read his f
 `tagOpt --no-tags` so his `v1.x` tags never mix with ours. Bringing a fix from him is a
 `cherry-pick` that keeps him as the commit author.
 
-Self-Labs is **phasing ControlArt out**: new installs use KinCony boards. Do not propose new
-features; the project exists to support the houses that already have the modules. The installer's
+ControlArt is **not** being phased out: each Self-Labs client picks the hardware they want to pay
+for (ControlArt or KinCony), so new installs can still use these modules. The installer's
 guide (pt-BR) lives in the private repo `cateim/homeassistant`, `docs/controlart.md`; client data
 never comes here.
 
@@ -24,8 +24,8 @@ never comes here.
     `setdmmd` dimmer), command confirmation (3 s), `getmd` watchdog (10 s), dimmer ramps, the
     keypad second-press polling.
   - `config_flow.py`: setup by IP only; the module reports MAC and type when probed.
-  - `registro.py`: removes entities the config no longer produces, strips the legacy MAC
-    `connections` from devices, writes the firmware into the device.
+  - `registro.py`: removes entities the config no longer produces, writes the firmware into the
+    device.
   - `light.py`, `event.py`, `binary_sensor.py`, `sensor.py` (IP), `button.py` (all on / all off),
     `diagnostics.py`, `entidade.py` (shared `DeviceInfo`).
   - `strings.json` + `translations/{en,pt-BR}.json`: keep the three in sync
@@ -53,9 +53,10 @@ CI (`.github/workflows/validar.yml`) runs `hassfest`, `hacs/action` and the test
 - Entity `unique_id`s are `controlart_<mac>_<kind>` where `<mac>` is the three bytes the module
   reports (e.g. `4E-50-D2`). Never change that pattern: it would recreate every entity in the
   installed houses.
-- **The three MAC bytes are an identifier, never a network MAC.** They do not go into
-  `connections` (Home Assistant would match them against the full MAC from the router or DHCP).
-  Decided 2026-10-18; do not bring it back to the device card.
+- **The MAC stays on the device card.** The three bytes the module reports go into `connections`
+  as `CONNECTION_NETWORK_MAC`, so the card shows them, the same as in mdConfig. Maintainer's
+  decision (2026-10-18): Tompson's 1.1.0 removed it, 2026.10.1 shipped that by mistake and
+  2026.10.2 restored it. Never remove it again.
 - Real firmware replies with just the number (`3027` relay, `1021` dimmer); MAC replies are
   `macaddr_RT,<mac>` on the relay and `macaddr,<mac>` on the dimmer.
 - Never commit IPs or MACs of a client. `legado.py` is git-ignored for that reason.
