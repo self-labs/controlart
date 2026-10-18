@@ -1,4 +1,32 @@
+# controlart - arquivos que nunca entram no repositório
+
+# ---- Dependências e artefatos ----
 __pycache__/
-*.pyc
-# dados de uma instalacao especifica - nunca publicar
+*.py[cod]
+.venv/
+venv/
+
+# ---- Ambiente ----
+.env
+.env.*
+!.env.example
+
+# ---- Dados locais ----
+# Módulos de uma instalação específica (IPs e MACs de um cliente), lidos pela
+# migração das versões de teste. Nunca publicar.
 custom_components/controlart/legado.py
+
+# ---- Gerado e regenerável ----
+graphify-out/
+
+# ---- Controle de trabalho ----
+# Rascunho de trabalho, não documentação: muda a cada sessão e cita o que
+# ainda está quebrado.
+CHECKLIST.md
+
+# ---- Sistema e editores ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
