@@ -1,8 +1,8 @@
-"""Firmware no card "Informacoes do dispositivo" do Home Assistant.
+"""Firmware e MAC no card "Informacoes do dispositivo" do Home Assistant.
 
-O firmware so chega depois da conexao, entao atualiza o dispositivo ja
-registrado. O MAC nao entra como MAC de rede: o modulo so informa os tres
-ultimos bytes, que ficam como identificador do dispositivo.
+O MAC ja vem no cadastro (os tres ultimos bytes, que e tudo o que o modulo
+informa) e entra no dispositivo desde a criacao. O firmware so chega depois
+da conexao, entao atualiza o dispositivo ja registrado.
 """
 
 from __future__ import annotations
@@ -55,48 +55,15 @@ class Firmware(unittest.TestCase):
 
 
 class Mac(unittest.TestCase):
-    def test_tres_bytes_nao_viram_mac_de_rede(self):
+    def test_dispositivo_tem_o_mac(self):
         info = light.Saida(rele(), 1)._attr_device_info
-        self.assertNotIn("connections", info)
-        self.assertEqual(info["identifiers"], {("controlart", MAC)})
+        self.assertEqual(info["connections"], {("mac", MAC)})
 
 
-def dispositivo(ident, sw_version=None, connections=()):
+def dispositivo(ident, sw_version=None):
     return type("Dispositivo", (), {
         "id": ident[1], "identifiers": {ident}, "sw_version": sw_version,
-        "connections": set(connections),
     })()
-
-
-class MacAntigoSaiDoRegistro(unittest.TestCase):
-    """Quem cadastrou antes da 2026.10.1 tem os tres bytes como MAC de rede
-    no dispositivo, e o registro do HA nunca tira `connections` sozinho."""
-
-    def setUp(self):
-        self.dr = sys.modules["homeassistant.helpers.device_registry"]
-        self.er = sys.modules["homeassistant.helpers.entity_registry"]
-
-    def tearDown(self):
-        for mod in (self.dr, self.er):
-            mod.async_get = None
-            mod.async_entries_for_config_entry = None
-
-    def limpa(self, *dispositivos):
-        falso = RegistroFalso(*dispositivos)
-        self.dr.async_get = lambda hass: falso
-        self.dr.async_entries_for_config_entry = lambda reg, entry_id: reg.dispositivos
-        self.er.async_get = lambda hass: None
-        self.er.async_entries_for_config_entry = lambda reg, entry_id: []
-        entrada = type("Entrada", (), {"entry_id": "entrada1"})()
-        registro.limpa_registro(None, entrada, [{"mac": MAC}])
-        return falso.atualizacoes
-
-    def test_tira_o_mac_de_rede_antigo(self):
-        antigo = dispositivo(("controlart", MAC), connections={("mac", MAC)})
-        self.assertEqual(self.limpa(antigo), [{"id": MAC, "new_connections": set()}])
-
-    def test_dispositivo_sem_mac_nao_e_tocado(self):
-        self.assertEqual(self.limpa(dispositivo(("controlart", MAC))), [])
 
 
 class RegistroFalso:
