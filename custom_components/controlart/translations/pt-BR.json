@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "ControlArt",
@@ -14,6 +15,17 @@
           "port": "Aparece no mdConfig; 4998 por padrão.",
           "keypad_inputs": "Marque as entradas ligadas a teclas de keypad (pulsadores). Elas viram entidades de evento; as demais viram sensores da posição do interruptor."
         }
+      },
+      "descoberto": {
+        "title": "Módulo ControlArt encontrado",
+        "description": "O módulo {mac} respondeu em {host} e informou o próprio tipo e as saídas. Falta só o nome e as entradas de keypad.",
+        "data": {
+          "name": "Nome",
+          "keypad_inputs": "Entradas de keypad"
+        },
+        "data_description": {
+          "keypad_inputs": "Marque as entradas ligadas a teclas de keypad (pulsadores). Elas viram entidades de evento; as demais viram sensores da posição do interruptor."
+        }
       }
     },
     "error": {
@@ -23,7 +35,10 @@
       "mac_diferente": "Outro módulo respondeu neste endereço."
     },
     "abort": {
-      "already_configured": "O ControlArt já está configurado. Use Configurar para adicionar módulos."
+      "already_configured": "O ControlArt já está configurado. Use Configurar para adicionar módulos.",
+      "ja_cadastrado": "Este módulo já está cadastrado.",
+      "modulo_adicionado": "Módulo adicionado ao ControlArt.",
+      "nao_e_controlart": "O aparelho encontrado não respondeu como um módulo ControlArt."
     }
   },
   "options": {

@@ -3,10 +3,11 @@
   "name": "ControlArt",
   "codeowners": ["@cateim"],
   "config_flow": true,
+  "dhcp": [{ "macaddress": "006037*" }],
   "documentation": "https://github.com/self-labs/controlart",
   "integration_type": "hub",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/self-labs/controlart/issues",
   "requirements": [],
-  "version": "2026.10.3"
+  "version": "2026.10.4"
 }

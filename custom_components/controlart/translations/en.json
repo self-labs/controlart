@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "ControlArt",
@@ -14,6 +15,17 @@
           "port": "Shown in mdConfig; 4998 by default.",
           "keypad_inputs": "Tick the inputs wired to keypad push buttons. They become event entities; the others become switch-position sensors."
         }
+      },
+      "descoberto": {
+        "title": "ControlArt module found",
+        "description": "Module {mac} answered at {host}. It reported its own type and outputs; only the name and the keypad inputs are left.",
+        "data": {
+          "name": "Name",
+          "keypad_inputs": "Keypad inputs"
+        },
+        "data_description": {
+          "keypad_inputs": "Tick the inputs wired to keypad push buttons. They become event entities; the others become switch-position sensors."
+        }
       }
     },
     "error": {
@@ -23,7 +35,10 @@
       "mac_diferente": "Another module answered at this address."
     },
     "abort": {
-      "already_configured": "ControlArt is already configured. Use Configure to add modules."
+      "already_configured": "ControlArt is already configured. Use Configure to add modules.",
+      "ja_cadastrado": "This module is already configured.",
+      "modulo_adicionado": "Module added to ControlArt.",
+      "nao_e_controlart": "The device found did not answer as a ControlArt module."
     }
   },
   "options": {

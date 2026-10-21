@@ -19,6 +19,10 @@ MAC AA-BB-CC  ->  endereço 170,187,204
 
 O endereço `255,255,255` funciona como **difusão** no pedido de estado: o módulo responde com o próprio estado, e o MAC vem no quadro. É assim que a integração descobre o endereço sabendo só o IP.
 
+Os **três primeiros bytes** do MAC são sempre `00-60-37`: conferido em 21/10/2026 em dois relés de lotes diferentes, pela etiqueta da caixa e pelo mdConfig, e na etiqueta de um dimmer. É um bloco registrado para a NXP Semiconductors, a fabricante do chip, e não para a ControlArt, que não tem bloco próprio no registro do IEEE. O módulo nunca informa esses três bytes; a integração completa o MAC com eles para mostrar no card e usa o mesmo prefixo para o Home Assistant achar os módulos na rede. Como outro aparelho com chip NXP pode ter o mesmo início, quem aparece com ele é consultado na porta 4998 antes de virar módulo.
+
+O **número de série** da etiqueta (`CPET-R…` nos relés, `CPET-D…` no dimmer) não sai por nenhum comando conhecido.
+
 ## Pedir o estado
 
 ```

@@ -21,11 +21,13 @@ class EntidadeControlArt(Entity):
 
     def __init__(self, modulo: ModuloConexao) -> None:
         self._modulo = modulo
-        # O MAC e so a parte que o modulo informa (tres ultimos bytes). O firmware
-        # chega depois da conexao e entra pelo registro (registro.atualiza_dispositivo).
+        # O identificador segue o MAC curto (tres ultimos bytes), como os unique_id;
+        # o card mostra o inteiro, como o mdConfig. O firmware chega depois da
+        # conexao e entra pelo registro (registro.atualiza_dispositivo), que
+        # tambem tira o MAC curto dos dispositivos criados ate a 2026.10.3.
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, modulo.mac)},
-            connections={(CONNECTION_NETWORK_MAC, modulo.mac)},
+            connections={(CONNECTION_NETWORK_MAC, modulo.mac_completo)},
             name=modulo.nome,
             manufacturer="ControlArt",
             model=MODELOS[modulo.tipo],

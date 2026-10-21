@@ -54,8 +54,41 @@ _modulo("homeassistant.exceptions", HomeAssistantError=HomeAssistantError)
 
 
 class _Fluxo:
+    """ConfigFlow e OptionsFlow: o resultado de cada passo vira um dict simples.
+
+    `entradas` e o que _async_current_entries devolve (sem os ignorados);
+    `ignorados` sao os unique_id que o usuario mandou ignorar.
+    """
+
+    entradas: list = []
+    ignorados: set = set()
+    unique_id = None
+
     def __init_subclass__(cls, **kwargs) -> None:   # ConfigFlow recebe domain=
         super().__init_subclass__()
+
+    async def async_set_unique_id(self, unique_id, raise_on_progress=True):
+        self.unique_id = unique_id
+
+    def _abort_if_unique_id_configured(self):
+        if self.unique_id in self.ignorados:
+            raise Abortado("already_configured")
+
+    def _async_current_entries(self, include_ignore=True):
+        return list(self.entradas)
+
+    def async_show_form(self, **kwargs):
+        return {"type": "form", **kwargs}
+
+    def async_abort(self, reason):
+        return {"type": "abort", "reason": reason}
+
+    def async_create_entry(self, **kwargs):
+        return {"type": "create_entry", **kwargs}
+
+
+class Abortado(Exception):
+    """O AbortFlow do HA: o teste confere o motivo."""
 
 
 _modulo(
@@ -84,6 +117,10 @@ _modulo(
     "homeassistant.helpers.device_registry",
     CONNECTION_NETWORK_MAC="mac",
     DeviceInfo=dict,
+    # o do HA: com ou sem separador, vira minusculo com dois-pontos
+    format_mac=lambda mac: ":".join(
+        mac.replace("-", "").replace(":", "").lower()[i : i + 2] for i in range(0, 12, 2)
+    ),
     async_get=None,                 # cada teste poe o seu registro falso
     async_entries_for_config_entry=None,
 )

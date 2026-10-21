@@ -4,6 +4,12 @@ So o IP e pedido: o modulo e perguntado pelo endereco de difusao e responde
 com o proprio MAC, que e o endereco dos comandos. O cabecalho da resposta diz
 se e rele ou dimmer, e o tamanho dela, quantas saidas tem. O primeiro modulo
 entra no fluxo de configuracao; os demais, pelas opcoes (Configurar).
+
+Descoberta: o manifest pede ao HA os aparelhos com MAC 00:60:37 (PREFIXO_MAC).
+O HA ve o pedido DHCP de cada um e varre a rede a cada hora, entao o modulo
+aparece como descoberto mesmo com IP fixo no mdConfig. O prefixo e da NXP e
+outro aparelho pode ter, por isso o modulo e perguntado antes de virar card.
+Um modulo ja cadastrado nao vira card: so tem o IP atualizado, se mudou.
 """
 
 from __future__ import annotations
@@ -28,6 +34,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_MAC_COMPLETO,
     CONF_MODULOS,
     CONF_SAIDAS,
     CONF_TECLAS,
@@ -38,7 +45,7 @@ from .const import (
     PORTA_PADRAO,
     TIPO_RELE,
 )
-from .protocolo import Identidade, SemConexao, SemResposta, sonda
+from .protocolo import Identidade, SemConexao, SemResposta, mac_da_rede, sonda
 
 SELETOR_TECLAS = SelectSelector(
     SelectSelectorConfig(
@@ -90,15 +97,32 @@ async def _monta_modulo(
     mac = identidade.mac
     if any(m[CONF_MAC] == mac for m in outros):
         return None, "ja_cadastrado"
+    modulo = _modulo(host, porta, identidade, dados)
+    if atual and atual.get(CONF_MAC_COMPLETO):
+        # visto pela descoberta: editar o nome nao pode apagar
+        modulo[CONF_MAC_COMPLETO] = atual[CONF_MAC_COMPLETO]
+    return modulo, None
+
+
+def _modulo(host: str, porta: int, identidade: Identidade, dados: dict[str, Any]) -> dict[str, Any]:
     return {
         CONF_HOST: host,
         CONF_PORT: porta,
-        CONF_MAC: mac,
+        CONF_MAC: identidade.mac,
         CONF_TIPO: identidade.tipo,
         CONF_SAIDAS: identidade.saidas,
-        CONF_NAME: dados[CONF_NAME].strip() or f"ControlArt {mac}",
+        CONF_NAME: dados[CONF_NAME].strip() or f"ControlArt {identidade.mac}",
         CONF_TECLAS: sorted(int(n) for n in dados.get(CONF_TECLAS, [])),
-    }, None
+    }
+
+
+def _esquema_descoberto(nome: str) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Required(CONF_NAME, default=nome): str,
+            vol.Optional(CONF_TECLAS, default=[]): SELETOR_TECLAS,
+        }
+    )
 
 
 class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -106,10 +130,79 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 2
 
+    # visto pela descoberta e ja perguntado: (ip, MAC inteiro, identidade)
+    _descoberto: tuple[str, str, Identidade]
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         return OpcoesControlArt()
+
+    def _entrada(self) -> ConfigEntry | None:
+        """A entrada unica, com todos os modulos; os 'ignorar' de cada card nao contam."""
+        return next(iter(self._async_current_entries(include_ignore=False)), None)
+
+    async def async_step_dhcp(self, discovery_info: Any) -> ConfigFlowResult:
+        """Aparelho com MAC 00:60:37 visto na rede (DhcpServiceInfo: ip, macaddress)."""
+        host = discovery_info.ip
+        completo = mac_da_rede(discovery_info.macaddress)
+        curto = completo[-8:]
+        entrada = self._entrada()
+        if entrada is not None:
+            modulos = list(entrada.options.get(CONF_MODULOS, []))
+            if any(m[CONF_MAC] == curto for m in modulos):
+                novos = [
+                    {**m, CONF_HOST: host, CONF_MAC_COMPLETO: completo} if m[CONF_MAC] == curto else m
+                    for m in modulos
+                ]
+                if novos != modulos:
+                    # IP novo: a entrada recarrega e o modulo volta no endereco certo
+                    self.hass.config_entries.async_update_entry(
+                        entrada, options={**entrada.options, CONF_MODULOS: novos}
+                    )
+                return self.async_abort(reason="ja_cadastrado")
+        # um card por modulo: o "ignorar" do HA vale para este modulo so
+        await self.async_set_unique_id(curto)
+        self._abort_if_unique_id_configured()
+        try:
+            identidade = await sonda(host, PORTA_PADRAO)
+        except (SemConexao, SemResposta):
+            return self.async_abort(reason="nao_e_controlart")
+        if identidade.mac != curto:
+            return self.async_abort(reason="nao_e_controlart")
+        self._descoberto = (host, completo, identidade)
+        self.context["title_placeholders"] = {"name": f"ControlArt {completo}"}
+        return await self.async_step_descoberto()
+
+    async def async_step_descoberto(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        host, completo, identidade = self._descoberto
+        entrada = self._entrada()
+        modulos = list(entrada.options.get(CONF_MODULOS, [])) if entrada else []
+        if user_input is not None:
+            if any(m[CONF_MAC] == identidade.mac for m in modulos):
+                return self.async_abort(reason="ja_cadastrado")
+            modulo = {
+                **_modulo(host, PORTA_PADRAO, identidade, user_input),
+                CONF_MAC_COMPLETO: completo,
+            }
+            if entrada is not None:
+                self.hass.config_entries.async_update_entry(
+                    entrada, options={**entrada.options, CONF_MODULOS: modulos + [modulo]}
+                )
+                return self.async_abort(reason="modulo_adicionado")
+            # primeiro modulo: a entrada leva o id unico de sempre, nao o MAC do card
+            await self.async_set_unique_id(DOMAIN, raise_on_progress=False)
+            self._abort_if_unique_id_configured()
+            return self.async_create_entry(
+                title="ControlArt", data={}, options={CONF_MODULOS: [modulo]}
+            )
+        return self.async_show_form(
+            step_id="descoberto",
+            data_schema=_esquema_descoberto(f"ControlArt {len(modulos) + 1:02d}"),
+            description_placeholders={"mac": completo, "host": host},
+        )
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         await self.async_set_unique_id(DOMAIN)

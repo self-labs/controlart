@@ -3,7 +3,8 @@
 Custom Home Assistant integration (domain `controlart`) for the **ControlArt wired modules**
 configured through mdConfig: the **relay** module (10 relay outputs, 12 inputs) and the **dimmer**
 module (channels with a 0 to 255 level, 12 inputs). It talks to each module over TCP on the LAN
-(port 4998 by default), local push, no cloud. Installed through HACS as a custom repository.
+(port 4998 by default), local push, no cloud. Installed through HACS as a custom repository;
+modules on the same network are discovered by their MAC prefix.
 
 **Independent project since 2026-10-18.** It started as a fork of
 [tompsonpecini/controlart](https://github.com/tompsonpecini/controlart) (MIT); the credit stays in
@@ -23,9 +24,14 @@ never comes here.
   - `protocolo.py`: TCP connection per module (`ModuloConexao`), frame parsing (`setcmd` relay,
     `setdmmd` dimmer), command confirmation (3 s), `getmd` watchdog (10 s), dimmer ramps, the
     keypad second-press polling.
-  - `config_flow.py`: setup by IP only; the module reports MAC and type when probed.
-  - `registro.py`: removes entities the config no longer produces, writes the firmware into the
-    device.
+  - `config_flow.py`: DHCP discovery (`manifest.json` matches MAC `006037*`; the flow probes port
+    4998 before showing a card, one card per module, `unique_id` = short MAC) and setup by IP,
+    where the module reports MAC and type when probed. One config entry holds every module: the
+    first card creates it (`unique_id` = `controlart`), later cards append to its options. A
+    configured module seen again only gets its IP updated.
+  - `registro.py`: removes entities the config no longer produces, writes the firmware and the
+    full MAC into the device (replacing the short MAC connection of devices created up to
+    2026.10.3).
   - `light.py`, `event.py`, `binary_sensor.py`, `sensor.py` (IP), `button.py` (all on / all off),
     `diagnostics.py`, `entidade.py` (shared `DeviceInfo`).
   - `strings.json` + `translations/{en,pt-BR}.json`: keep the three in sync
@@ -57,10 +63,13 @@ CI (`.github/workflows/validar.yml`) runs `hassfest`, `hacs/action` and the test
 - Entity `unique_id`s are `controlart_<mac>_<kind>` where `<mac>` is the three bytes the module
   reports (e.g. `4E-50-D2`). Never change that pattern: it would recreate every entity in the
   installed houses.
-- **The MAC stays on the device card.** The three bytes the module reports go into `connections`
-  as `CONNECTION_NETWORK_MAC`, so the card shows them, the same as in mdConfig. Maintainer's
-  decision (2026-10-18): Tompson's 1.1.0 removed it, 2026.10.1 shipped that by mistake and
-  2026.10.2 restored it. Never remove it again.
+- **The MAC stays on the device card.** Maintainer's decision (2026-10-18): Tompson's 1.1.0
+  removed it, 2026.10.1 shipped that by mistake and 2026.10.2 restored it. Never remove it again.
+  Since 2026-10-21 the card shows the **full** MAC, as mdConfig and the box label do: the module
+  only reports the last three bytes, and the first three are always `00-60-37` (`PREFIXO_MAC`,
+  an NXP block; checked on two relays from different batches and on a dimmer). When DHCP
+  discovery has seen the module, its real MAC is stored as `full_mac` and wins over the prefix.
+  The device identifier stays the short MAC, like the `unique_id`s.
 - Real firmware replies with just the number (`3027` relay, `1021` dimmer); MAC replies are
   `macaddr_RT,<mac>` on the relay and `macaddr,<mac>` on the dimmer.
 - Never commit IPs or MACs of a client. `legado.py` is git-ignored for that reason.

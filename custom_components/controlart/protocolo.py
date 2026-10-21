@@ -57,6 +57,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
     CABECALHOS,
+    CONF_MAC_COMPLETO,
     CONF_SAIDAS,
     CONF_TECLAS,
     CONF_TIPO,
@@ -64,6 +65,7 @@ from .const import (
     JANELA_LIMPEZA,
     N_ENTRADAS,
     N_SAIDAS,
+    PREFIXO_MAC,
     RECONEXAO_MAX,
     SIGNAL_CONEXAO,
     SIGNAL_ESTADO,
@@ -99,6 +101,21 @@ class SemResposta(Exception):
 def endereco(mac: str) -> str:
     """'AA-BB-CC' -> '170,187,204'."""
     return ",".join(str(int(parte, 16)) for parte in mac.split("-"))
+
+
+def mac_completo(curto: str, visto: str | None = None) -> str:
+    """'AA-BB-CC' -> '00-60-37-AA-BB-CC', o MAC que o mdConfig e a etiqueta mostram.
+
+    O modulo so informa os tres ultimos bytes; os tres primeiros sao fixos
+    (PREFIXO_MAC). Quando a descoberta ja viu o modulo na rede, vale o que ela viu.
+    """
+    return visto or f"{PREFIXO_MAC}-{curto}"
+
+
+def mac_da_rede(macaddress: str) -> str:
+    """'006037aabbcc', como o DHCP do HA entrega, -> '00-60-37-AA-BB-CC'."""
+    limpo = macaddress.replace(":", "").replace("-", "").upper()
+    return "-".join(limpo[i : i + 2] for i in range(0, 12, 2))
 
 
 class Identidade(NamedTuple):
@@ -142,6 +159,7 @@ class ModuloConexao:
     def __init__(self, hass: HomeAssistant, cfg: dict[str, Any]) -> None:
         self.hass = hass
         self.mac: str = cfg[CONF_MAC]
+        self.mac_completo: str = mac_completo(self.mac, cfg.get(CONF_MAC_COMPLETO))
         self.host: str = cfg[CONF_HOST]
         self.porta: int = cfg[CONF_PORT]
         self.nome: str = cfg[CONF_NAME]
@@ -189,6 +207,7 @@ class ModuloConexao:
             "host": self.host,
             "porta": self.porta,
             "mac": self.mac,
+            "mac_completo": self.mac_completo,
             "tipo": self.tipo,
             "saidas_ou_canais": self.n_saidas,
             "teclas": sorted(self.teclas),

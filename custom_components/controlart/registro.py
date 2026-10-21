@@ -4,7 +4,7 @@ Tirar um modulo, ou trocar uma entrada de interruptor para tecla (e
 vice-versa), deixa para tras entidades que nenhuma plataforma vai mais
 criar. Aqui elas saem do registro, e o dispositivo de um modulo removido
 deixa de pertencer a esta integracao. O firmware que o modulo informa ao
-conectar tambem e gravado aqui, no dispositivo.
+conectar, e o MAC inteiro, tambem sao gravados aqui, no dispositivo.
 
 Nao renomeia nada e nao mexe em area: o que o usuario ajustou fica.
 """
@@ -18,6 +18,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
@@ -69,16 +70,35 @@ def limpa_registro(hass: HomeAssistant, entry: ConfigEntry, modulos: list[dict[s
 
 @callback
 def atualiza_dispositivo(hass: HomeAssistant, entry_id: str, modulo: ModuloConexao) -> None:
-    """Grava no dispositivo o firmware que o modulo acabou de informar.
+    """Grava no dispositivo o firmware que o modulo informou e deixa so o MAC
+    inteiro nas conexoes.
+
+    Ate a 2026.10.3 a conexao era o MAC curto. O DeviceInfo agora traz o
+    inteiro, mas o registro soma conexoes em vez de trocar: o curto sai aqui.
 
     Procura entre os dispositivos da propria entrada, e nao por
     async_get_device: o HA 2026.10 avisa que ele esta obsoleto, e o substituto
     (async_get_device_by_identifier) nao existe nas versoes que o hacs.json aceita.
     """
     versao = modulo.versao_firmware
-    if versao is None:
-        return
+    conexoes = {(dr.CONNECTION_NETWORK_MAC, dr.format_mac(modulo.mac_completo))}
     devs = dr.async_get(hass)
     for dispositivo in dr.async_entries_for_config_entry(devs, entry_id):
-        if (DOMAIN, modulo.mac) in dispositivo.identifiers and dispositivo.sw_version != versao:
-            devs.async_update_device(dispositivo.id, sw_version=versao)
+        if (DOMAIN, modulo.mac) not in dispositivo.identifiers:
+            continue
+        mudancas: dict[str, Any] = {}
+        if versao is not None and dispositivo.sw_version != versao:
+            mudancas["sw_version"] = versao
+        if dispositivo.connections != conexoes:
+            mudancas["new_connections"] = conexoes
+        if not mudancas:
+            continue
+        try:
+            devs.async_update_device(dispositivo.id, **mudancas)
+        except HomeAssistantError as err:
+            # outro dispositivo do HA ja tem este MAC: fica o firmware, sem a troca
+            _LOGGER.warning("ControlArt %s: MAC %s nao entrou no dispositivo: %s",
+                            modulo.nome, modulo.mac_completo, err)
+            mudancas.pop("new_connections", None)
+            if mudancas:
+                devs.async_update_device(dispositivo.id, **mudancas)
