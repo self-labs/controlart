@@ -1,3 +1,8 @@
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=home-assistant&logoColor=white)](https://hacs.xyz/) [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/) [![Release](https://img.shields.io/github/v/release/self-labs/controlart?color=293a44)](https://github.com/self-labs/controlart/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/self-labs/controlart/blob/master/LICENSE)
+
+<!-- Todo link da linha acima fica absoluto. O HACS reescreve um link relativo prefixando
+o primeiro "(" da linha inteira, que é a imagem do primeiro badge. -->
+
 # ControlArt para Home Assistant
 
 Integração local para os **módulos cabeados da ControlArt**, configurados pelo mdConfig: o **relé** (10 saídas a relé, 12 entradas digitais) e o **dimmer** (canais com nível de 0 a 255, 12 entradas digitais). Fala direto com cada módulo por TCP na rede local: sem nuvem, sem Node-RED, sem outro Home Assistant no meio.

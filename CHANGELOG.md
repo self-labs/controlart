@@ -9,6 +9,17 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.3] - 2026-10-21
+
+### 🔧 Changed
+
+- **O ícone e o logo são os oficiais da ControlArt.** Saíram do logo horizontal do site do fabricante: os dois círculos no ícone e a marca inteira no logo. O tema escuro ganhou versões próprias (`dark_icon`, `dark_logo`) com o anel verde e o disco branco, como no site; no tema claro ficam o anel cinza e o disco verde do favicon deles. O README diz de quem é a marca.
+- **O README abre com os badges dos outros projetos**: HACS, a versão mínima do Home Assistant (2025.1), a versão atual e a licença.
+
+### 🐛 Fixed
+
+- **O link da licença nos Créditos não abria dentro do HACS.** O HACS só reescreve um link relativo quando nada depois dele na mesma linha tem `://`, e o link do Hubitat vinha logo depois. O link agora é absoluto.
+
 ## [2026.10.2] - 2026-10-18
 
 ### 🐛 Fixed
@@ -59,7 +70,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.2...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.3...HEAD
+[2026.10.3]: https://github.com/self-labs/controlart/compare/v2026.10.2...v2026.10.3
 [2026.10.2]: https://github.com/self-labs/controlart/compare/v2026.10.1...v2026.10.2
 [2026.10.1]: https://github.com/self-labs/controlart/compare/v1.0.1...v2026.10.1
 [1.0.1]: https://github.com/self-labs/controlart/compare/v1.0.0...v1.0.1
