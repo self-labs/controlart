@@ -86,7 +86,9 @@ As versões seguem o calendário (`AAAA.M.R`: ano, mês e a revisão dentro do m
 
 ## Créditos
 
-Inspirado na integração [tompsonpecini/controlart](https://github.com/tompsonpecini/controlart), de **Tompson Pecini**, de onde este projeto partiu (licença MIT, mantida em [LICENSE](LICENSE)). Os comandos de firmware, MAC e "tudo aceso/apagado" vieram do driver Hubitat [hhorigian/hubitat_Controlart_Relays](https://github.com/hhorigian/hubitat_Controlart_Relays).
+Inspirado na integração [tompsonpecini/controlart](https://github.com/tompsonpecini/controlart), de **Tompson Pecini**, de onde este projeto partiu (licença MIT, mantida em [LICENSE](https://github.com/self-labs/controlart/blob/master/LICENSE)). Os comandos de firmware, MAC e "tudo aceso/apagado" vieram do driver Hubitat [hhorigian/hubitat_Controlart_Relays](https://github.com/hhorigian/hubitat_Controlart_Relays).
+
+O ícone e o logo da integração são a marca da [ControlArt](https://www.controlart.com.br/), tirados do site dela, e servem só para identificar o fabricante dos módulos. Este projeto não é da ControlArt nem tem o apoio dela.
 
 ---
 

@@ -30,7 +30,11 @@ never comes here.
     `diagnostics.py`, `entidade.py` (shared `DeviceInfo`).
   - `strings.json` + `translations/{en,pt-BR}.json`: keep the three in sync
     (`tests/test_traducoes.py` checks the keys the lights use, not all of them).
-  - `brand/`: integration icon.
+  - `brand/`: integration icon and logo, light and `dark_` variants, cut from ControlArt's
+    official horizontal logo (`Logo_Horizontal_semFundo_Site_Alta.png` on controlart.com.br).
+    The dark set keeps the site's colours (teal ring, white disc and text); the light set
+    takes the favicon's (grey ring `#6E6A6C`, teal disc `#5B9A97`, grey text). Icon 256 and
+    512 square, logo 128 and 256 high, transparent, trimmed.
 - `tests/`: stdlib `unittest` with a fake Home Assistant (`tests/ha_falso.py`). No pytest, no HA
   install.
 - `docs/protocolo.md`: the module protocol and the traps found on real hardware.
