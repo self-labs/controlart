@@ -9,6 +9,17 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.4] - 2026-10-21
+
+### ✨ Added
+
+- **Os módulos aparecem sozinhos depois de instalar e reiniciar.** O Home Assistant reconhece o módulo pelo início do MAC, `00-60-37`, igual em todo módulo ControlArt, e mostra um card de **Descoberto** por módulo em Dispositivos e serviços. O IP, o tipo e as saídas o módulo já informou: o card só pede o nome e as entradas de keypad. O primeiro card cria a integração e os seguintes entram nela; **Ignorar** vale só para aquele módulo. Funciona também com IP fixo no mdConfig, porque o Home Assistant varre a rede ao iniciar e a cada hora. Esse início de MAC é da NXP, a fabricante do chip, então a integração pergunta ao aparelho na porta 4998 antes de mostrar o card, e o que não responder como ControlArt não aparece. O cadastro pelo IP continua, para módulo em outra porta ou outra rede.
+- **Um módulo cadastrado que muda de IP volta sozinho.** Quando o Home Assistant vê o módulo em outro endereço, a integração troca o IP do cadastro e reconecta. O IP fixo continua recomendado, mas deixou de ser obrigatório.
+
+### 🔧 Changed
+
+- **O card do dispositivo mostra o MAC inteiro**, como o mdConfig e a etiqueta da caixa, em vez de só os três últimos bytes que o módulo informa. Os dispositivos já cadastrados trocam o MAC curto pelo inteiro no primeiro início; os ids das entidades não mudam. O diagnóstico também traz o MAC inteiro.
+
 ## [2026.10.3] - 2026-10-21
 
 ### 🔧 Changed
@@ -70,7 +81,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.3...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.4...HEAD
+[2026.10.4]: https://github.com/self-labs/controlart/compare/v2026.10.3...v2026.10.4
 [2026.10.3]: https://github.com/self-labs/controlart/compare/v2026.10.2...v2026.10.3
 [2026.10.2]: https://github.com/self-labs/controlart/compare/v2026.10.1...v2026.10.2
 [2026.10.1]: https://github.com/self-labs/controlart/compare/v1.0.1...v2026.10.1
