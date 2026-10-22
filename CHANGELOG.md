@@ -9,6 +9,22 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.6] - 2026-10-22
+
+### 🔧 Changed
+
+- **O README explica o caminho sem nenhum clique**: numa rede UniFi, com a integração UniFi Network no Home Assistant, ela informa ao HA o IP e o MAC de cada aparelho a cada início, e o reconhecimento pelo início `00-60-37` (desde a 2026.10.4) abre o card de cada módulo sozinho. Conferido no código do HA (`device_tracker/entity.py` avisa a descoberta DHCP até dos rastreadores criados desligados); ainda não testado com módulos numa rede UniFi.
+
+### 🐛 Fixed
+
+- **A busca da 2026.10.5 não achou os módulos de um cliente** e o cadastro abriu direto no pedido de IP. Causa, vista no servidor dele: o IP fixo do Home Assistant foi gravado com máscara /32, então a rede "do HA" era só ele mesmo e a busca percorreu zero endereços. Os módulos respondiam normalmente, pelo roteador. Agora uma máscara menor que /24 (como /32) vira o /24 do IP do HA. Com o código novo rodado no próprio servidor do cliente, a busca achou os três módulos em 2 s.
+- **A busca ficou mais robusta**, nos pontos que apareceram enquanto a causa não era conhecida:
+  - **Uma conexão só por endereço.** A 2026.10.5 abria uma conexão para ver a porta, fechava e abria outra para perguntar. O módulo é um aparelho embarcado, muitas vezes com as conexões do Node-RED abertas; agora a pergunta vai na mesma conexão.
+  - **Segunda rodada pela tabela ARP.** A tentativa em cada endereço faz o sistema aprender o MAC dos aparelhos da rede. Os que começam com `00:60:37` são perguntados de novo, com 5 s de espera e duas tentativas, e trazem o MAC inteiro para o card. Não ajuda num servidor como o desse cliente, que fala com a rede só pelo roteador.
+  - **Menos tentativas ao mesmo tempo** (128, eram 256), para não encher a tabela ARP do sistema, que para em 1024 linhas: um /22 leva uns 8 s.
+  - **Cada busca deixa uma linha no log** (`ControlArt: busca em N enderecos…`): quantos endereços, os módulos achados, os aparelhos `00:60:37` que o ARP mostrou e quem atendeu sem responder como módulo. "busca em 0 enderecos" teria mostrado o problema na hora.
+  - Um aparelho `00:60:37` que o ARP mostrou mas que não respondeu já vem preenchido no pedido de IP.
+
 ## [2026.10.5] - 2026-10-21
 
 ### ✨ Added
@@ -18,7 +34,7 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ### 🐛 Fixed
 
-- **Nenhum card aparecia depois de instalar e reiniciar.** A 2026.10.4 contava com o Home Assistant achando os módulos pelo início do MAC, mas o HA só vê o módulo quando ele pede IP ao ligar: a varredura de hora em hora do HA só devolve aparelho com nome reverso no DNS do roteador, o que roteador doméstico não costuma ter. Na Dora (Deco), o navegador DHCP do HA não mostrou nenhum módulo. A busca da própria integração resolve, e o reconhecimento pelo MAC continua para quando o módulo liga.
+- **Nenhum card aparecia depois de instalar e reiniciar.** A 2026.10.4 contava com o Home Assistant achando os módulos pelo início do MAC, mas o HA só vê o módulo quando ele pede IP ao ligar: a varredura de hora em hora do HA só devolve aparelho com nome reverso no DNS do roteador, o que roteador doméstico não costuma ter. Num cliente (Deco), o navegador DHCP do HA não mostrou nenhum módulo. A busca da própria integração resolve, e o reconhecimento pelo MAC continua para quando o módulo liga.
 
 ## [2026.10.4] - 2026-10-21
 
@@ -92,7 +108,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.5...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.6...HEAD
+[2026.10.6]: https://github.com/self-labs/controlart/compare/v2026.10.5...v2026.10.6
 [2026.10.5]: https://github.com/self-labs/controlart/compare/v2026.10.4...v2026.10.5
 [2026.10.4]: https://github.com/self-labs/controlart/compare/v2026.10.3...v2026.10.4
 [2026.10.3]: https://github.com/self-labs/controlart/compare/v2026.10.2...v2026.10.3
