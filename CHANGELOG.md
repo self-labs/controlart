@@ -9,6 +9,12 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.7] - 2026-10-22
+
+### 🔧 Changed
+
+- **Pronto para o catálogo padrão do HACS.** A validação do HACS no CI roda sem nenhuma checagem desligada (saiu o `ignore: brands`: o ícone vem da pasta `brand/` da integração), que é o que o `hacs/default` exige. O `hacs.json` ganhou `"country": "BR"`, porque os módulos ControlArt são vendidos no Brasil: no catálogo, o HACS mostra a integração para quem configurou o Brasil.
+
 ## [2026.10.6] - 2026-10-22
 
 ### 🔧 Changed
@@ -108,7 +114,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.6...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.7...HEAD
+[2026.10.7]: https://github.com/self-labs/controlart/compare/v2026.10.6...v2026.10.7
 [2026.10.6]: https://github.com/self-labs/controlart/compare/v2026.10.5...v2026.10.6
 [2026.10.5]: https://github.com/self-labs/controlart/compare/v2026.10.4...v2026.10.5
 [2026.10.4]: https://github.com/self-labs/controlart/compare/v2026.10.3...v2026.10.4
