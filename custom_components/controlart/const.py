@@ -7,6 +7,7 @@ PORTA_PADRAO = 4998
 # O modulo so informa os outros tres. E por eles que o HA acha os modulos na rede (manifest).
 PREFIXO_MAC = "00-60-37"
 INTERVALO_GETMD = 120          # s · pedido periodico de estado, serve de keepalive
+INTERVALO_BUSCA = 3600         # s · busca de modulos novos e de IP mudado na rede (busca.py)
 JANELA_LIMPEZA = 2.0           # s · quadro com entradas zeradas logo apos outro
 RECONEXAO_MAX = 30             # s · teto da espera progressiva
 TIMEOUT_SONDA = 5.0            # s · para o modulo responder ao ser cadastrado

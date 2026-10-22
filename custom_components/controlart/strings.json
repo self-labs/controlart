@@ -4,7 +4,27 @@
     "step": {
       "user": {
         "title": "ControlArt",
-        "description": "First wired module, relay or dimmer. Only the IP is needed: the module reports its own MAC and type. Add the others later under Configure.",
+        "description": "{quantos} ControlArt module(s) answered on the Home Assistant network.",
+        "menu_options": {
+          "escolher": "Pick a module found on the network",
+          "ip": "Enter the IP"
+        }
+      },
+      "escolher": {
+        "title": "Modules found",
+        "description": "Each one shows the MAC printed on the box label and in mdConfig, and the IP it answered at. The others become discovered cards once this one is set up.",
+        "data": {
+          "host": "Module",
+          "name": "Name",
+          "keypad_inputs": "Keypad inputs"
+        },
+        "data_description": {
+          "keypad_inputs": "Tick the inputs wired to keypad push buttons. They become event entities; the others become switch-position sensors."
+        }
+      },
+      "ip": {
+        "title": "ControlArt",
+        "description": "No module answered on port 4998 of the Home Assistant network, or you chose to enter the IP. The module reports its own MAC and type. Add the others later under Configure.",
         "data": {
           "host": "IP address",
           "port": "TCP port",
@@ -46,9 +66,22 @@
       "init": {
         "title": "ControlArt modules",
         "menu_options": {
-          "adicionar": "Add a module",
+          "procurar": "Search the network for modules",
+          "adicionar": "Add a module by IP",
           "escolher_editar": "Edit a module",
           "remover": "Remove a module"
+        }
+      },
+      "procurar": {
+        "title": "Modules found",
+        "description": "Modules that answered on the Home Assistant network and are not configured yet.",
+        "data": {
+          "host": "Module",
+          "name": "Name",
+          "keypad_inputs": "Keypad inputs"
+        },
+        "data_description": {
+          "keypad_inputs": "Tick the inputs wired to keypad push buttons."
         }
       },
       "adicionar": {
@@ -94,6 +127,9 @@
       "sem_resposta": "Something answered, but not as a ControlArt module.",
       "ja_cadastrado": "This module is already configured.",
       "mac_diferente": "Another module answered at this address."
+    },
+    "abort": {
+      "nenhum_novo": "No new module answered on port 4998 of the Home Assistant network. Use Add a module by IP."
     }
   },
   "entity": {

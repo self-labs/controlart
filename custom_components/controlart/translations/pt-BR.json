@@ -4,7 +4,27 @@
     "step": {
       "user": {
         "title": "ControlArt",
-        "description": "Primeiro módulo cabeado, relé ou dimmer. Basta o IP: o módulo informa o próprio MAC e o tipo. Os outros se adicionam depois, em Configurar.",
+        "description": "{quantos} módulo(s) ControlArt responderam na rede do Home Assistant.",
+        "menu_options": {
+          "escolher": "Escolher um módulo encontrado na rede",
+          "ip": "Informar o IP"
+        }
+      },
+      "escolher": {
+        "title": "Módulos encontrados",
+        "description": "Cada um aparece com o MAC da etiqueta da caixa e do mdConfig, e o IP em que respondeu. Os outros viram cards de descoberto depois que este for cadastrado.",
+        "data": {
+          "host": "Módulo",
+          "name": "Nome",
+          "keypad_inputs": "Entradas de keypad"
+        },
+        "data_description": {
+          "keypad_inputs": "Marque as entradas ligadas a teclas de keypad (pulsadores). Elas viram entidades de evento; as demais viram sensores da posição do interruptor."
+        }
+      },
+      "ip": {
+        "title": "ControlArt",
+        "description": "Nenhum módulo respondeu na porta 4998 da rede do Home Assistant, ou você preferiu informar o IP. O módulo informa o próprio MAC e o tipo. Os outros se adicionam depois, em Configurar.",
         "data": {
           "host": "Endereço IP",
           "port": "Porta TCP",
@@ -46,9 +66,22 @@
       "init": {
         "title": "Módulos ControlArt",
         "menu_options": {
-          "adicionar": "Adicionar um módulo",
+          "procurar": "Procurar módulos na rede",
+          "adicionar": "Adicionar pelo IP",
           "escolher_editar": "Editar um módulo",
           "remover": "Remover um módulo"
+        }
+      },
+      "procurar": {
+        "title": "Módulos encontrados",
+        "description": "Módulos que responderam na rede do Home Assistant e ainda não estão cadastrados.",
+        "data": {
+          "host": "Módulo",
+          "name": "Nome",
+          "keypad_inputs": "Entradas de keypad"
+        },
+        "data_description": {
+          "keypad_inputs": "Marque as entradas ligadas a teclas de keypad (pulsadores)."
         }
       },
       "adicionar": {
@@ -94,6 +127,9 @@
       "sem_resposta": "Algo respondeu, mas não como um módulo ControlArt.",
       "ja_cadastrado": "Este módulo já está cadastrado.",
       "mac_diferente": "Outro módulo respondeu neste endereço."
+    },
+    "abort": {
+      "nenhum_novo": "Nenhum módulo novo respondeu na porta 4998 da rede do Home Assistant. Use Adicionar pelo IP."
     }
   },
   "entity": {

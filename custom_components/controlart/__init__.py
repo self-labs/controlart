@@ -8,6 +8,7 @@ por TCP, sem nuvem.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from functools import partial
 import importlib
 import logging
@@ -16,8 +17,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.event import async_track_time_interval
 
-from .const import CONF_MODULOS, SIGNAL_IDENTIDADE
+from . import busca
+from .const import CONF_MODULOS, INTERVALO_BUSCA, SIGNAL_IDENTIDADE
 from .protocolo import ControlArtHub
 from .registro import atualiza_dispositivo, limpa_registro
 
@@ -53,6 +56,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ControlArtConfigEntry) -
     for modulo in hub.modulos.values():
         atualiza_dispositivo(hass, entry.entry_id, modulo)
     entry.async_on_unload(entry.add_update_listener(_recarrega))
+
+    # modulos novos viram card, e quem mudou de IP volta: ao iniciar e a cada hora
+    async def _procura(_agora: datetime | None = None) -> None:
+        await busca.procura(hass, entry)
+
+    entry.async_create_background_task(hass, _procura(), "controlart busca")
+    entry.async_on_unload(
+        async_track_time_interval(hass, _procura, timedelta(seconds=INTERVALO_BUSCA))
+    )
     return True
 
 

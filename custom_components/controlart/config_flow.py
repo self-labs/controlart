@@ -1,15 +1,21 @@
 """Cadastro dos modulos pela interface.
 
-So o IP e pedido: o modulo e perguntado pelo endereco de difusao e responde
-com o proprio MAC, que e o endereco dos comandos. O cabecalho da resposta diz
-se e rele ou dimmer, e o tamanho dela, quantas saidas tem. O primeiro modulo
-entra no fluxo de configuracao; os demais, pelas opcoes (Configurar).
+O modulo e perguntado pelo endereco de difusao e responde com o proprio MAC,
+que e o endereco dos comandos. O cabecalho da resposta diz se e rele ou
+dimmer, e o tamanho dela, quantas saidas tem. Uma entrada so guarda todos os
+modulos: o primeiro a cria, os demais entram nela.
 
-Descoberta: o manifest pede ao HA os aparelhos com MAC 00:60:37 (PREFIXO_MAC).
-O HA ve o pedido DHCP de cada um e varre a rede a cada hora, entao o modulo
-aparece como descoberto mesmo com IP fixo no mdConfig. O prefixo e da NXP e
-outro aparelho pode ter, por isso o modulo e perguntado antes de virar card.
-Um modulo ja cadastrado nao vira card: so tem o IP atualizado, se mudou.
+Tres caminhos ate o modulo:
+- Adicionar integracao: a integracao procura na rede (busca.py) e lista quem
+  respondeu; digitar o IP fica como alternativa.
+- Card de descoberto vindo da busca de hora em hora, que so roda com a
+  integracao ja configurada (integration_discovery).
+- Card de descoberto vindo do DHCP do HA (manifest: MAC 00:60:37). So acontece
+  quando o HA ve o modulo pedir IP, ao ligar: a varredura do proprio HA
+  depende de nome reverso no DNS do roteador e nao achou nada na Dora.
+O prefixo e da NXP e outro aparelho pode ter, por isso o modulo e perguntado
+antes de virar card. Um modulo ja cadastrado nao vira card: so tem o IP
+atualizado, se mudou.
 """
 
 from __future__ import annotations
@@ -45,7 +51,8 @@ from .const import (
     PORTA_PADRAO,
     TIPO_RELE,
 )
-from .protocolo import Identidade, SemConexao, SemResposta, mac_da_rede, sonda
+from . import busca
+from .protocolo import Identidade, SemConexao, SemResposta, mac_completo, mac_da_rede, sonda
 
 SELETOR_TECLAS = SelectSelector(
     SelectSelectorConfig(
@@ -116,13 +123,39 @@ def _modulo(host: str, porta: int, identidade: Identidade, dados: dict[str, Any]
     }
 
 
+def _nome_e_teclas(nome: str) -> dict[Any, Any]:
+    return {
+        vol.Required(CONF_NAME, default=nome): str,
+        vol.Optional(CONF_TECLAS, default=[]): SELETOR_TECLAS,
+    }
+
+
 def _esquema_descoberto(nome: str) -> vol.Schema:
+    return vol.Schema(_nome_e_teclas(nome))
+
+
+def _esquema_escolha(achados: dict[str, Identidade], nome: str) -> vol.Schema:
+    """Os modulos que a busca achou, com o MAC da etiqueta, e o nome e as teclas."""
     return vol.Schema(
         {
-            vol.Required(CONF_NAME, default=nome): str,
-            vol.Optional(CONF_TECLAS, default=[]): SELETOR_TECLAS,
+            vol.Required(CONF_HOST): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        SelectOptionDict(value=host, label=f"{mac_completo(i.mac)} · {host}")
+                        for host, i in achados.items()
+                    ]
+                )
+            ),
+            **_nome_e_teclas(nome),
         }
     )
+
+
+async def _procura_novos(hass: Any, modulos: list[dict[str, Any]]) -> dict[str, Identidade]:
+    """Busca na rede, sem os modulos ja cadastrados."""
+    cadastrados = {m[CONF_MAC] for m in modulos}
+    achados = await busca.varre(await busca.enderecos(hass))
+    return {host: i for host, i in achados.items() if i.mac not in cadastrados}
 
 
 class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -130,8 +163,10 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 2
 
-    # visto pela descoberta e ja perguntado: (ip, MAC inteiro, identidade)
-    _descoberto: tuple[str, str, Identidade]
+    # card de descoberto: (ip, identidade, MAC inteiro que o DHCP viu ou None)
+    _descoberto: tuple[str, Identidade, str | None]
+    # o que a busca do "Adicionar integracao" achou: {ip: identidade}
+    _achados: dict[str, Identidade]
 
     @staticmethod
     @callback
@@ -170,23 +205,40 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="nao_e_controlart")
         if identidade.mac != curto:
             return self.async_abort(reason="nao_e_controlart")
-        self._descoberto = (host, completo, identidade)
-        self.context["title_placeholders"] = {"name": f"ControlArt {completo}"}
+        return await self._card(host, identidade, completo)
+
+    async def async_step_integration_discovery(
+        self, discovery_info: dict[str, Any]
+    ) -> ConfigFlowResult:
+        """Modulo achado pela busca de hora em hora (busca.procura), ja perguntado."""
+        identidade = Identidade(
+            discovery_info[CONF_MAC], discovery_info[CONF_TIPO], discovery_info[CONF_SAIDAS]
+        )
+        await self.async_set_unique_id(identidade.mac)
+        self._abort_if_unique_id_configured()
+        return await self._card(discovery_info[CONF_HOST], identidade, None)
+
+    async def _card(
+        self, host: str, identidade: Identidade, visto: str | None
+    ) -> ConfigFlowResult:
+        self._descoberto = (host, identidade, visto)
+        self.context["title_placeholders"] = {
+            "name": f"ControlArt {mac_completo(identidade.mac, visto)}"
+        }
         return await self.async_step_descoberto()
 
     async def async_step_descoberto(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        host, completo, identidade = self._descoberto
+        host, identidade, visto = self._descoberto
         entrada = self._entrada()
         modulos = list(entrada.options.get(CONF_MODULOS, [])) if entrada else []
         if user_input is not None:
             if any(m[CONF_MAC] == identidade.mac for m in modulos):
                 return self.async_abort(reason="ja_cadastrado")
-            modulo = {
-                **_modulo(host, PORTA_PADRAO, identidade, user_input),
-                CONF_MAC_COMPLETO: completo,
-            }
+            modulo = _modulo(host, PORTA_PADRAO, identidade, user_input)
+            if visto:
+                modulo[CONF_MAC_COMPLETO] = visto
             if entrada is not None:
                 self.hass.config_entries.async_update_entry(
                     entrada, options={**entrada.options, CONF_MODULOS: modulos + [modulo]}
@@ -195,29 +247,49 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
             # primeiro modulo: a entrada leva o id unico de sempre, nao o MAC do card
             await self.async_set_unique_id(DOMAIN, raise_on_progress=False)
             self._abort_if_unique_id_configured()
-            return self.async_create_entry(
-                title="ControlArt", data={}, options={CONF_MODULOS: [modulo]}
-            )
+            return self._cria(modulo)
         return self.async_show_form(
             step_id="descoberto",
             data_schema=_esquema_descoberto(f"ControlArt {len(modulos) + 1:02d}"),
-            description_placeholders={"mac": completo, "host": host},
+            description_placeholders={"mac": mac_completo(identidade.mac, visto), "host": host},
         )
 
+    def _cria(self, modulo: dict[str, Any]) -> ConfigFlowResult:
+        return self.async_create_entry(title="ControlArt", data={}, options={CONF_MODULOS: [modulo]})
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Adicionar integracao: procura na rede antes de pedir IP."""
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
+        self._achados = await _procura_novos(self.hass, [])
+        if not self._achados:
+            return await self.async_step_ip()
+        return self.async_show_menu(
+            step_id="user",
+            menu_options=["escolher", "ip"],
+            description_placeholders={"quantos": str(len(self._achados))},
+        )
+
+    async def async_step_escolher(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            host = user_input[CONF_HOST]
+            return self._cria(_modulo(host, PORTA_PADRAO, self._achados[host], user_input))
+        return self.async_show_form(
+            step_id="escolher", data_schema=_esquema_escolha(self._achados, "ControlArt 01")
+        )
+
+    async def async_step_ip(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         erros: dict[str, str] = {}
         if user_input is not None:
             modulo, erro = await _monta_modulo(user_input, [])
             if erro:
                 erros["base"] = erro
             else:
-                return self.async_create_entry(
-                    title="ControlArt", data={}, options={CONF_MODULOS: [modulo]}
-                )
+                return self._cria(modulo)
         return self.async_show_form(
-            step_id="user",
+            step_id="ip",
             data_schema=_esquema(user_input or {CONF_NAME: "ControlArt 01"}),
             errors=erros,
         )
@@ -228,6 +300,7 @@ class OpcoesControlArt(OptionsFlow):
 
     def __init__(self) -> None:
         self._mac: str | None = None
+        self._achados: dict[str, Identidade] = {}
 
     def _modulos(self) -> list[dict[str, Any]]:
         return list(self.config_entry.options.get(CONF_MODULOS, []))
@@ -250,10 +323,26 @@ class OpcoesControlArt(OptionsFlow):
         return self.async_create_entry(data={CONF_MODULOS: modulos})
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        opcoes = ["adicionar"]
+        opcoes = ["procurar", "adicionar"]
         if self._modulos():
             opcoes += ["escolher_editar", "remover"]
         return self.async_show_menu(step_id="init", menu_options=opcoes)
+
+    async def async_step_procurar(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        modulos = self._modulos()
+        if user_input is not None:
+            host = user_input[CONF_HOST]
+            modulo = _modulo(host, PORTA_PADRAO, self._achados[host], user_input)
+            return self._salva(modulos + [modulo])
+        self._achados = await _procura_novos(self.hass, modulos)
+        if not self._achados:
+            return self.async_abort(reason="nenhum_novo")
+        return self.async_show_form(
+            step_id="procurar",
+            data_schema=_esquema_escolha(self._achados, f"ControlArt {len(modulos) + 1:02d}"),
+        )
 
     async def async_step_adicionar(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         modulos = self._modulos()

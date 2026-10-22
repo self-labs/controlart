@@ -24,11 +24,21 @@ never comes here.
   - `protocolo.py`: TCP connection per module (`ModuloConexao`), frame parsing (`setcmd` relay,
     `setdmmd` dimmer), command confirmation (3 s), `getmd` watchdog (10 s), dimmer ramps, the
     keypad second-press polling.
-  - `config_flow.py`: DHCP discovery (`manifest.json` matches MAC `006037*`; the flow probes port
-    4998 before showing a card, one card per module, `unique_id` = short MAC) and setup by IP,
-    where the module reports MAC and type when probed. One config entry holds every module: the
-    first card creates it (`unique_id` = `controlart`), later cards append to its options. A
-    configured module seen again only gets its IP updated.
+  - `busca.py`: the LAN search. Tries port 4998 on every address of the networks enabled in
+    HA's network settings (`network` dependency; up to 1024 addresses, else the HA's /24) and
+    probes whoever answers. Runs in the setup flow, in Configure > Search, and once the entry
+    exists at startup and every hour (`__init__.py`): new modules become discovered cards
+    (`integration_discovery`), a configured module found at another IP gets its IP updated.
+    Needed because HA's own discovery cannot see the modules: its hourly scan (aiodiscover)
+    only returns hosts with a PTR record on the router's DNS, and on Dora's Deco the DHCP
+    browser listed none (2026-10-21).
+  - `config_flow.py`: setup runs the search and offers the modules found (menu: pick one, or
+    enter the IP); cards come from the hourly search or from DHCP discovery (`manifest.json`
+    matches MAC `006037*`, which only fires when HA sees the module request an address at
+    power-up; the flow probes port 4998 first). One card per module, `unique_id` = short MAC.
+    One config entry holds every module: the first module creates it (`unique_id` =
+    `controlart`), later cards append to its options. A configured module seen again only gets
+    its IP updated.
   - `registro.py`: removes entities the config no longer produces, writes the firmware and the
     full MAC into the device (replacing the short MAC connection of devices created up to
     2026.10.3).

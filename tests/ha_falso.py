@@ -80,6 +80,9 @@ class _Fluxo:
     def async_show_form(self, **kwargs):
         return {"type": "form", **kwargs}
 
+    def async_show_menu(self, **kwargs):
+        return {"type": "menu", **kwargs}
+
     def async_abort(self, reason):
         return {"type": "abort", "reason": reason}
 
@@ -97,6 +100,7 @@ _modulo(
     ConfigFlow=_Fluxo,
     ConfigFlowResult=dict,
     OptionsFlow=_Fluxo,
+    SOURCE_INTEGRATION_DISCOVERY="integration_discovery",
 )
 _modulo(
     "voluptuous",
@@ -144,6 +148,22 @@ _modulo(
     LightEntityFeature=type("LightEntityFeature", (), {"TRANSITION": 32}),
 )
 _modulo("homeassistant.components.sensor", SensorEntity=type("SensorEntity", (), {}))
+
+
+async def _sem_adaptadores(hass):
+    return []
+
+
+# cada teste poe os adaptadores dele em async_get_adapters
+_modulo("homeassistant.components.network", async_get_adapters=_sem_adaptadores)
+
+fluxos_criados: list[dict] = []
+_modulo(
+    "homeassistant.helpers.discovery_flow",
+    async_create_flow=lambda hass, dominio, context, data: fluxos_criados.append(
+        {"dominio": dominio, "context": context, "data": data}
+    ),
+)
 _modulo("homeassistant.components.button", ButtonEntity=type("ButtonEntity", (), {}))
 
 _pacote = types.ModuleType("controlart")
@@ -154,6 +174,7 @@ const = importlib.import_module("controlart.const")
 protocolo = importlib.import_module("controlart.protocolo")
 registro = importlib.import_module("controlart.registro")
 light = importlib.import_module("controlart.light")
+busca = importlib.import_module("controlart.busca")
 config_flow = importlib.import_module("controlart.config_flow")
 
 

@@ -54,34 +54,31 @@ Copie a pasta `custom_components/controlart` para dentro de `config/custom_compo
 
 ## Configuração
 
-### Descoberta automática
-
-Depois de instalar e reiniciar, os módulos da rede aparecem sozinhos em _Configurações → Dispositivos e serviços_, como **Descobertos**, um card por módulo com o MAC dele.
-
-1. Clique em **Configurar** no card. O IP, o tipo (relé ou dimmer) e as saídas o módulo já informou.
-2. Dê um **nome** e marque quais **entradas são teclas de keypad** (pulsadores). As demais são tratadas como interruptores comuns.
-
-O primeiro card cria a integração; os seguintes entram nela. **Ignorar** num card vale só para aquele módulo.
-
-O Home Assistant reconhece o módulo pelo início do MAC (`00-60-37`). Ele vê o módulo quando o módulo pede IP ao roteador e numa varredura da rede que faz ao iniciar e a cada hora, então o card aparece também com IP fixo no mdConfig. Antes de mostrar o card, a integração pergunta ao aparelho na porta 4998 se ele é mesmo um módulo ControlArt: esse início de MAC é do fabricante do chip, e outro aparelho pode ter.
-
-### Cadastro pelo IP
-
-Para um módulo que não apareceu (porta diferente de 4998, ou outra rede):
+### Primeiro módulo
 
 [![Começar o cadastro da integração ControlArt no seu Home Assistant.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=controlart)
 
 O botão abre o cadastro direto. Sem ele: _Configurações → Dispositivos e serviços → Adicionar integração → ControlArt._
 
-1. Informe o **IP** do módulo. A porta é 4998, salvo se você mudou no mdConfig. O MAC e o tipo não precisam: o módulo informa os dois quando é consultado.
-2. Marque quais **entradas são teclas de keypad** (pulsadores).
-3. Para os outros módulos: na integração, **Configurar → Adicionar um módulo**.
+1. A integração **procura os módulos na rede** do Home Assistant: tenta a porta 4998 em cada endereço e pergunta a quem atender. Leva alguns segundos.
+2. **Escolher um módulo encontrado na rede**: cada um aparece com o MAC da etiqueta da caixa e do mdConfig, e o IP em que respondeu. O tipo (relé ou dimmer) e as saídas o módulo já informou.
+3. Dê um **nome** e marque quais **entradas são teclas de keypad** (pulsadores). As demais são tratadas como interruptores comuns.
+
+Se nenhum módulo responder, ou se você escolher **Informar o IP**, o cadastro pede o IP e a porta (4998, salvo se você mudou no mdConfig).
+
+### Os outros módulos
+
+Com o primeiro cadastrado, a integração repete a busca ao iniciar e a cada hora. Cada módulo que ela achar e que ainda não estiver cadastrado aparece em _Dispositivos e serviços_ como **Descoberto**, um card por módulo com o MAC dele: **Configurar**, nome e teclas. **Ignorar** num card vale só para aquele módulo.
+
+Para não esperar a próxima busca: na integração, **Configurar → Procurar módulos na rede**. **Adicionar pelo IP** continua lá, para um módulo em outra porta ou outra rede.
+
+O Home Assistant também mostra o card sozinho quando vê o módulo pedir IP ao roteador, o que acontece quando o módulo liga, se ele estiver com DHCP no mdConfig: o manifest pede ao HA os aparelhos com o início de MAC `00-60-37`. Esse início é do fabricante do chip e outro aparelho pode ter, por isso a integração pergunta na porta 4998 antes de mostrar o card.
 
 ### Depois do cadastro
 
 O nome das saídas começa como "Saída 1", "Saída 2"… Renomeie no próprio Home Assistant e ponha cada uma na sua área; a integração não mexe no que você ajustou.
 
-Um **IP fixo** para cada módulo (reserva no roteador ou IP estático no mdConfig) continua recomendado. Se o IP de um módulo cadastrado mudar, a integração corrige sozinha assim que o Home Assistant vir o módulo de novo na rede; até lá, o módulo fica indisponível.
+Um **IP fixo** para cada módulo (reserva no roteador ou IP estático no mdConfig) continua recomendado. Se o IP de um módulo cadastrado mudar, a busca de hora em hora o acha no endereço novo e corrige o cadastro; até lá, o módulo fica indisponível.
 
 ## Dicas
 
@@ -97,7 +94,7 @@ Um **IP fixo** para cada módulo (reserva no roteador ou IP estático no mdConfi
 
 - Motores e cortinas configurados no módulo são ignorados: o comando de motor não é conhecido. As linhas de configuração de motor que o módulo manda aparecem no diagnóstico.
 - A integração não altera a programação do módulo; isso continua sendo feito no mdConfig.
-- A descoberta só enxerga a rede do próprio Home Assistant. Um Home Assistant em Docker precisa de `network_mode: host` para isso; módulos em outra VLAN entram pelo IP.
+- A busca só percorre as redes marcadas em _Configurações → Sistema → Rede_, até 1024 endereços por rede (numa rede maior, só os 254 vizinhos do Home Assistant), e só na porta 4998. Um Home Assistant em Docker precisa de `network_mode: host` para enxergar a rede da casa. Módulo em outra VLAN ou em outra porta entra pelo IP.
 - O número de série da caixa não aparece no card: nenhum comando conhecido do módulo devolve o serial.
 
 O protocolo, com as armadilhas que apareceram pelo caminho, está descrito em [docs/protocolo.md](docs/protocolo.md).
@@ -118,9 +115,9 @@ O ícone e o logo da integração são a marca da [ControlArt](https://www.contr
 
 ## English summary
 
-Local-push Home Assistant integration for **ControlArt wired modules**: the relay module (10 relay outputs, 12 digital inputs) and the dimmer module (channels with a 0 to 255 level, 12 digital inputs). Each module becomes a device with one `light` entity per output (with brightness on the dimmer), one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, a connectivity sensor, a diagnostic IP sensor, and "All on" / "All off" buttons for the whole module. The device card shows the module firmware and its full MAC, and **Download diagnostics** returns the last lines exchanged with each module. Modules on the same network are discovered after install and restart (Home Assistant matches the `00:60:37` MAC prefix, and the integration probes port 4998 before showing the card); setup then asks only for a name and the keypad inputs. A configured module whose IP changes is followed automatically. Modules on another port or network are added by IP. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
+Local-push Home Assistant integration for **ControlArt wired modules**: the relay module (10 relay outputs, 12 digital inputs) and the dimmer module (channels with a 0 to 255 level, 12 digital inputs). Each module becomes a device with one `light` entity per output (with brightness on the dimmer), one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, a connectivity sensor, a diagnostic IP sensor, and "All on" / "All off" buttons for the whole module. The device card shows the module firmware and its full MAC, and **Download diagnostics** returns the last lines exchanged with each module. Setup searches the Home Assistant network for modules on port 4998 and lists the ones that answer, so only a name and the keypad inputs are asked. Once the first module is set up, the search runs at startup and every hour: new modules show up as discovered cards, and a configured module whose IP changed is followed. Home Assistant's own DHCP discovery (MAC prefix `00:60:37`) also shows a card when a module requests an address at power-up. Modules on another port or network are added by IP. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
 
-Install with the HACS button above (or add `https://github.com/self-labs/controlart` as a custom repository, type Integration), restart, then configure the discovered modules (or use the setup button to add one by IP). Versions are CalVer (`YYYY.M.R`), listed in [CHANGELOG.md](CHANGELOG.md).
+Install with the HACS button above (or add `https://github.com/self-labs/controlart` as a custom repository, type Integration), restart, then use the setup button to pick the first module from the search. Versions are CalVer (`YYYY.M.R`), listed in [CHANGELOG.md](CHANGELOG.md).
 
 Inspired by [tompsonpecini/controlart](https://github.com/tompsonpecini/controlart) by Tompson Pecini, where this project started (MIT).
 

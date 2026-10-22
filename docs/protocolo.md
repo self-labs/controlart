@@ -19,7 +19,9 @@ MAC AA-BB-CC  ->  endereço 170,187,204
 
 O endereço `255,255,255` funciona como **difusão** no pedido de estado: o módulo responde com o próprio estado, e o MAC vem no quadro. É assim que a integração descobre o endereço sabendo só o IP.
 
-Os **três primeiros bytes** do MAC são sempre `00-60-37`: conferido em 21/10/2026 em dois relés de lotes diferentes, pela etiqueta da caixa e pelo mdConfig, e na etiqueta de um dimmer. É um bloco registrado para a NXP Semiconductors, a fabricante do chip, e não para a ControlArt, que não tem bloco próprio no registro do IEEE. O módulo nunca informa esses três bytes; a integração completa o MAC com eles para mostrar no card e usa o mesmo prefixo para o Home Assistant achar os módulos na rede. Como outro aparelho com chip NXP pode ter o mesmo início, quem aparece com ele é consultado na porta 4998 antes de virar módulo.
+Os **três primeiros bytes** do MAC são sempre `00-60-37`: conferido em 21/10/2026 em dois relés de lotes diferentes, pela etiqueta da caixa e pelo mdConfig, e na etiqueta de um dimmer. É um bloco registrado para a NXP Semiconductors, a fabricante do chip, e não para a ControlArt, que não tem bloco próprio no registro do IEEE. O módulo nunca informa esses três bytes; a integração completa o MAC com eles para mostrar no card, e o Home Assistant usa o prefixo para reconhecer o módulo quando o vê pedir IP (DHCP, ao ligar). Como outro aparelho com chip NXP pode ter o mesmo início, quem aparece com ele é consultado na porta 4998 antes de virar módulo.
+
+**Achar os módulos na rede**: o modo que funciona em qualquer roteador é tentar a porta 4998 em cada endereço e mandar o `mdcmd_getmd,255,255,255` a quem atender. A varredura do próprio Home Assistant não serve: ela só devolve aparelho com nome reverso (PTR) no DNS do roteador, e no Deco da Dora, em 21/10/2026, o navegador DHCP do HA não mostrou nenhum módulo. O aplicativo da ControlArt acha os módulos por outro caminho, ainda não conhecido.
 
 O **número de série** da etiqueta (`CPET-R…` nos relés, `CPET-D…` no dimmer) não sai por nenhum comando conhecido.
 
