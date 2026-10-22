@@ -70,7 +70,10 @@ python -B -m unittest discover -s tests
 ```
 
 CI (`.github/workflows/validar.yml`) runs `hassfest`, `hacs/action` and the tests on every push to
-`master`. The HACS check needs issues enabled and topics set on the GitHub repository.
+`master`. The HACS check needs issues enabled and topics set on the GitHub repository, and runs
+with **no `ignore` key**: `hacs/default` refuses a repository whose HACS action skips a check.
+`hacs.json` carries `"country": "BR"` (ControlArt sells in Brazil), which `hacs/default` requires
+for a repository limited to some countries.
 
 ## Conventions
 

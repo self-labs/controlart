@@ -1,5 +1,6 @@
 {
   "name": "ControlArt",
+  "country": "BR",
   "homeassistant": "2025.1.0",
   "render_readme": true
 }

@@ -25,11 +25,12 @@ jobs:
   hacs:
     runs-on: ubuntu-latest
     steps:
-      # sem checkout de proposito: a action le o repositorio pela API do GitHub
+      # sem checkout de proposito: a action le o repositorio pela API do GitHub.
+      # Sem nenhum "ignore": o hacs/default recusa a inclusao com checagem desligada.
+      # O icone vem de custom_components/controlart/brand/.
       - uses: hacs/action@main
         with:
           category: integration
-          ignore: brands
 
   testes:
     runs-on: ubuntu-latest
