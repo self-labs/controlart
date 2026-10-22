@@ -64,7 +64,9 @@ O botão abre o cadastro direto. Sem ele: _Configurações → Dispositivos e se
 2. **Escolher um módulo encontrado na rede**: cada um aparece com o MAC da etiqueta da caixa e do mdConfig, e o IP em que respondeu. O tipo (relé ou dimmer) e as saídas o módulo já informou.
 3. Dê um **nome** e marque quais **entradas são teclas de keypad** (pulsadores). As demais são tratadas como interruptores comuns.
 
-Se nenhum módulo responder, ou se você escolher **Informar o IP**, o cadastro pede o IP e a porta (4998, salvo se você mudou no mdConfig).
+Se nenhum módulo responder, ou se você escolher **Informar o IP**, o cadastro pede o IP e a porta (4998, salvo se você mudou no mdConfig). Um aparelho com MAC `00:60:37` que a busca viu na rede mas que não respondeu já vem preenchido.
+
+Cada busca deixa uma linha em _Configurações → Sistema → Logs_ (procure por `ControlArt: busca`): quantos endereços percorreu, os módulos que achou, os aparelhos `00:60:37` que viu na rede e quem atendeu sem responder como módulo. É o primeiro lugar a olhar quando um módulo não aparece.
 
 ### Os outros módulos
 
@@ -72,7 +74,12 @@ Com o primeiro cadastrado, a integração repete a busca ao iniciar e a cada hor
 
 Para não esperar a próxima busca: na integração, **Configurar → Procurar módulos na rede**. **Adicionar pelo IP** continua lá, para um módulo em outra porta ou outra rede.
 
-O Home Assistant também mostra o card sozinho quando vê o módulo pedir IP ao roteador, o que acontece quando o módulo liga, se ele estiver com DHCP no mdConfig: o manifest pede ao HA os aparelhos com o início de MAC `00-60-37`. Esse início é do fabricante do chip e outro aparelho pode ter, por isso a integração pergunta na porta 4998 antes de mostrar o card.
+O Home Assistant também mostra o card sozinho, sem nenhuma busca, quando fica sabendo do MAC do módulo: o manifest pede ao HA os aparelhos com o início de MAC `00-60-37`. Isso acontece de dois jeitos:
+
+- **Com a integração UniFi Network no Home Assistant**, numa rede UniFi: ela informa ao HA o IP e o MAC de cada aparelho da rede a cada início, e o card de cada módulo aparece logo depois de instalar o ControlArt e reiniciar. É o caminho para não precisar apertar nada.
+- **Quando o módulo pede IP ao roteador**, ao ligar, se estiver com DHCP no mdConfig.
+
+Esse início de MAC é do fabricante do chip e outro aparelho pode ter, por isso a integração pergunta na porta 4998 antes de mostrar o card.
 
 ### Depois do cadastro
 
@@ -94,7 +101,7 @@ Um **IP fixo** para cada módulo (reserva no roteador ou IP estático no mdConfi
 
 - Motores e cortinas configurados no módulo são ignorados: o comando de motor não é conhecido. As linhas de configuração de motor que o módulo manda aparecem no diagnóstico.
 - A integração não altera a programação do módulo; isso continua sendo feito no mdConfig.
-- A busca só percorre as redes marcadas em _Configurações → Sistema → Rede_, até 1024 endereços por rede (numa rede maior, só os 254 vizinhos do Home Assistant), e só na porta 4998. Um Home Assistant em Docker precisa de `network_mode: host` para enxergar a rede da casa. Módulo em outra VLAN ou em outra porta entra pelo IP.
+- A busca só percorre as redes marcadas em _Configurações → Sistema → Rede_, de 254 a 1024 endereços por rede (numa rede maior, ou com máscara menor que /24, como um IP fixo gravado com /32, só os 254 vizinhos do Home Assistant), e só na porta 4998. Um Home Assistant em Docker precisa de `network_mode: host` para enxergar a rede da casa. Módulo em outra VLAN ou em outra porta entra pelo IP.
 - O número de série da caixa não aparece no card: nenhum comando conhecido do módulo devolve o serial.
 
 O protocolo, com as armadilhas que apareceram pelo caminho, está descrito em [docs/protocolo.md](docs/protocolo.md).

@@ -25,12 +25,18 @@ never comes here.
     `setdmmd` dimmer), command confirmation (3 s), `getmd` watchdog (10 s), dimmer ramps, the
     keypad second-press polling.
   - `busca.py`: the LAN search. Tries port 4998 on every address of the networks enabled in
-    HA's network settings (`network` dependency; up to 1024 addresses, else the HA's /24) and
-    probes whoever answers. Runs in the setup flow, in Configure > Search, and once the entry
+    HA's network settings (`network` dependency; from a /24 up to 1024 addresses: a mask
+    narrower than /24 becomes the HA's /24, because a client's HA had its static IP saved
+    as `/32` and 2026.10.5 searched zero addresses; a wider network than 1024 also becomes /24),
+    probing in the same connection (one connection per address, 1 s connect timeout, 128 at a
+    time). Then reads `/proc/net/arp` and probes again, with the normal 5 s timeout and two
+    tries, every `00:60:37` neighbour that did not answer; that also yields the full MAC. Each
+    search logs one INFO line with what it found: read it first when a client says nothing
+    showed up ("busca em 0 enderecos" means the HA network setting, not the modules). Runs in the setup flow, in Configure > Search, and once the entry
     exists at startup and every hour (`__init__.py`): new modules become discovered cards
     (`integration_discovery`), a configured module found at another IP gets its IP updated.
     Needed because HA's own discovery cannot see the modules: its hourly scan (aiodiscover)
-    only returns hosts with a PTR record on the router's DNS, and on Dora's Deco the DHCP
+    only returns hosts with a PTR record on the router's DNS, and on a client's Deco the DHCP
     browser listed none (2026-10-21).
   - `config_flow.py`: setup runs the search and offers the modules found (menu: pick one, or
     enter the IP); cards come from the hourly search or from DHCP discovery (`manifest.json`

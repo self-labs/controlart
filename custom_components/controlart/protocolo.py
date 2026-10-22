@@ -126,11 +126,15 @@ class Identidade(NamedTuple):
     saidas: int     # saidas do rele ou canais do dimmer
 
 
-async def sonda(host: str, porta: int) -> Identidade:
-    """Pergunta ao modulo quem ele e: MAC, tipo e quantas saidas tem."""
+async def sonda(host: str, porta: int, timeout_conexao: float = TIMEOUT_SONDA) -> Identidade:
+    """Pergunta ao modulo quem ele e: MAC, tipo e quantas saidas tem.
+
+    `timeout_conexao` curto serve a busca na rede: endereco sem ninguem nao
+    responde, e esperar 5 s por cada um tornaria a busca lenta demais.
+    """
     try:
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(host, porta), TIMEOUT_SONDA
+            asyncio.open_connection(host, porta), timeout_conexao
         )
     except (OSError, asyncio.TimeoutError) as err:
         raise SemConexao from err

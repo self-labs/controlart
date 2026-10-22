@@ -12,7 +12,7 @@ Tres caminhos ate o modulo:
   integracao ja configurada (integration_discovery).
 - Card de descoberto vindo do DHCP do HA (manifest: MAC 00:60:37). So acontece
   quando o HA ve o modulo pedir IP, ao ligar: a varredura do proprio HA
-  depende de nome reverso no DNS do roteador e nao achou nada na Dora.
+  depende de nome reverso no DNS do roteador e nao achou nada num cliente.
 O prefixo e da NXP e outro aparelho pode ter, por isso o modulo e perguntado
 antes de virar card. Um modulo ja cadastrado nao vira card: so tem o IP
 atualizado, se mudou.
@@ -134,15 +134,18 @@ def _esquema_descoberto(nome: str) -> vol.Schema:
     return vol.Schema(_nome_e_teclas(nome))
 
 
-def _esquema_escolha(achados: dict[str, Identidade], nome: str) -> vol.Schema:
+def _esquema_escolha(achados: busca.Resultado, nome: str) -> vol.Schema:
     """Os modulos que a busca achou, com o MAC da etiqueta, e o nome e as teclas."""
     return vol.Schema(
         {
             vol.Required(CONF_HOST): SelectSelector(
                 SelectSelectorConfig(
                     options=[
-                        SelectOptionDict(value=host, label=f"{mac_completo(i.mac)} · {host}")
-                        for host, i in achados.items()
+                        SelectOptionDict(
+                            value=host,
+                            label=f"{mac_completo(i.mac, achados.mac_visto(host))} · {host}",
+                        )
+                        for host, i in achados.modulos.items()
                     ]
                 )
             ),
@@ -151,11 +154,26 @@ def _esquema_escolha(achados: dict[str, Identidade], nome: str) -> vol.Schema:
     )
 
 
-async def _procura_novos(hass: Any, modulos: list[dict[str, Any]]) -> dict[str, Identidade]:
+async def _procura_novos(hass: Any, modulos: list[dict[str, Any]]) -> busca.Resultado:
     """Busca na rede, sem os modulos ja cadastrados."""
     cadastrados = {m[CONF_MAC] for m in modulos}
-    achados = await busca.varre(await busca.enderecos(hass))
-    return {host: i for host, i in achados.items() if i.mac not in cadastrados}
+    ocupados = {m[CONF_HOST] for m in modulos}
+    resultado = await busca.varre(hass, [h for h in await busca.enderecos(hass) if h not in ocupados])
+    resultado.modulos = {h: i for h, i in resultado.modulos.items() if i.mac not in cadastrados}
+    return resultado
+
+
+def _modulo_achado(achados: busca.Resultado, dados: dict[str, Any]) -> dict[str, Any]:
+    host = dados[CONF_HOST]
+    modulo = _modulo(host, PORTA_PADRAO, achados.modulos[host], dados)
+    if visto := achados.mac_visto(host):
+        modulo[CONF_MAC_COMPLETO] = visto
+    return modulo
+
+
+def _ip_calado(achados: busca.Resultado) -> str | None:
+    """Um aparelho 00:60:37 que a busca viu mas que nao respondeu: o IP ja vem no formulario."""
+    return next((h for h in achados.macs if h not in achados.modulos), None)
 
 
 class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -165,8 +183,8 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
 
     # card de descoberto: (ip, identidade, MAC inteiro que o DHCP viu ou None)
     _descoberto: tuple[str, Identidade, str | None]
-    # o que a busca do "Adicionar integracao" achou: {ip: identidade}
-    _achados: dict[str, Identidade]
+    # o que a busca do "Adicionar integracao" achou
+    _achados: busca.Resultado | None = None
 
     @staticmethod
     @callback
@@ -216,7 +234,9 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         await self.async_set_unique_id(identidade.mac)
         self._abort_if_unique_id_configured()
-        return await self._card(discovery_info[CONF_HOST], identidade, None)
+        return await self._card(
+            discovery_info[CONF_HOST], identidade, discovery_info.get(CONF_MAC_COMPLETO)
+        )
 
     async def _card(
         self, host: str, identidade: Identidade, visto: str | None
@@ -262,22 +282,22 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
         self._achados = await _procura_novos(self.hass, [])
-        if not self._achados:
+        if not self._achados.modulos:
             return await self.async_step_ip()
         return self.async_show_menu(
             step_id="user",
             menu_options=["escolher", "ip"],
-            description_placeholders={"quantos": str(len(self._achados))},
+            description_placeholders={"quantos": str(len(self._achados.modulos))},
         )
 
     async def async_step_escolher(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        achados = self._achados or busca.Resultado()   # so se chega aqui depois do user
         if user_input is not None:
-            host = user_input[CONF_HOST]
-            return self._cria(_modulo(host, PORTA_PADRAO, self._achados[host], user_input))
+            return self._cria(_modulo_achado(achados, user_input))
         return self.async_show_form(
-            step_id="escolher", data_schema=_esquema_escolha(self._achados, "ControlArt 01")
+            step_id="escolher", data_schema=_esquema_escolha(achados, "ControlArt 01")
         )
 
     async def async_step_ip(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -288,9 +308,12 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
                 erros["base"] = erro
             else:
                 return self._cria(modulo)
+        padrao: dict[str, Any] = {CONF_NAME: "ControlArt 01"}
+        if self._achados and (calado := _ip_calado(self._achados)):
+            padrao[CONF_HOST] = calado
         return self.async_show_form(
             step_id="ip",
-            data_schema=_esquema(user_input or {CONF_NAME: "ControlArt 01"}),
+            data_schema=_esquema(user_input or padrao),
             errors=erros,
         )
 
@@ -300,7 +323,7 @@ class OpcoesControlArt(OptionsFlow):
 
     def __init__(self) -> None:
         self._mac: str | None = None
-        self._achados: dict[str, Identidade] = {}
+        self._achados = busca.Resultado()
 
     def _modulos(self) -> list[dict[str, Any]]:
         return list(self.config_entry.options.get(CONF_MODULOS, []))
@@ -333,11 +356,9 @@ class OpcoesControlArt(OptionsFlow):
     ) -> ConfigFlowResult:
         modulos = self._modulos()
         if user_input is not None:
-            host = user_input[CONF_HOST]
-            modulo = _modulo(host, PORTA_PADRAO, self._achados[host], user_input)
-            return self._salva(modulos + [modulo])
+            return self._salva(modulos + [_modulo_achado(self._achados, user_input)])
         self._achados = await _procura_novos(self.hass, modulos)
-        if not self._achados:
+        if not self._achados.modulos:
             return self.async_abort(reason="nenhum_novo")
         return self.async_show_form(
             step_id="procurar",
