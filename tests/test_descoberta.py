@@ -71,7 +71,8 @@ class Descoberta(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(passo["step_id"], "descoberto")
         self.assertEqual(passo["description_placeholders"],
                          {"mac": "00-60-37-AA-BB-CC", "host": "192.168.1.50"})
-        self.assertEqual(fluxo.context["title_placeholders"], {"name": "ControlArt 00-60-37-AA-BB-CC"})
+        # o card ja diz ControlArt embaixo: o titulo e o tipo e o IP
+        self.assertEqual(fluxo.context["title_placeholders"], {"name": "Relé - 192.168.1.50"})
         self.assertEqual(fluxo.unique_id, "AA-BB-CC")
         self.assertEqual(self.perguntados, [("192.168.1.50", 4998)])
 
@@ -153,6 +154,17 @@ class Descoberta(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNone(erro)
         self.assertEqual(modulo[const.CONF_MAC_COMPLETO], "02-11-22-AA-BB-CC")
+
+
+class Rotulo(unittest.TestCase):
+    """Titulo do card de descoberto e item da lista da busca."""
+
+    def test_rele(self):
+        self.assertEqual(config_flow._rotulo(RELE, "192.168.1.22"), "Relé - 192.168.1.22")
+
+    def test_dimmer(self):
+        dimmer = protocolo.Identidade("DD-EE-FF", const.TIPO_DIMMER, 9)
+        self.assertEqual(config_flow._rotulo(dimmer, "192.168.1.23"), "Dimmer - 192.168.1.23")
 
 
 class Manifest(unittest.TestCase):

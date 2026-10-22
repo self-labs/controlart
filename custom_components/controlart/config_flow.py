@@ -49,6 +49,7 @@ from .const import (
     N_ENTRADAS,
     N_SAIDAS,
     PORTA_PADRAO,
+    TIPO_DIMMER,
     TIPO_RELE,
 )
 from . import busca
@@ -134,17 +135,26 @@ def _esquema_descoberto(nome: str) -> vol.Schema:
     return vol.Schema(_nome_e_teclas(nome))
 
 
+# Nome do tipo no card de descoberto e na lista da busca. Fica em portugues nas duas
+# linguas: o texto entra como placeholder, que o HA nao traduz, e a integracao e so do
+# Brasil (hacs.json, country BR).
+NOME_DO_TIPO = {TIPO_RELE: "Relé", TIPO_DIMMER: "Dimmer"}
+
+
+def _rotulo(identidade: Identidade, host: str) -> str:
+    """'Relé - 192.168.1.22': o card ja diz ControlArt embaixo, e o MAC inteiro fica no
+    formulario do card e no dispositivo depois do cadastro."""
+    return f"{NOME_DO_TIPO.get(identidade.tipo, identidade.tipo)} - {host}"
+
+
 def _esquema_escolha(achados: busca.Resultado, nome: str) -> vol.Schema:
-    """Os modulos que a busca achou, com o MAC da etiqueta, e o nome e as teclas."""
+    """Os modulos que a busca achou, pelo tipo e pelo IP, e o nome e as teclas."""
     return vol.Schema(
         {
             vol.Required(CONF_HOST): SelectSelector(
                 SelectSelectorConfig(
                     options=[
-                        SelectOptionDict(
-                            value=host,
-                            label=f"{mac_completo(i.mac, achados.mac_visto(host))} · {host}",
-                        )
+                        SelectOptionDict(value=host, label=_rotulo(i, host))
                         for host, i in achados.modulos.items()
                     ]
                 )
@@ -242,9 +252,7 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
         self, host: str, identidade: Identidade, visto: str | None
     ) -> ConfigFlowResult:
         self._descoberto = (host, identidade, visto)
-        self.context["title_placeholders"] = {
-            "name": f"ControlArt {mac_completo(identidade.mac, visto)}"
-        }
+        self.context["title_placeholders"] = {"name": _rotulo(identidade, host)}
         return await self.async_step_descoberto()
 
     async def async_step_descoberto(

@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "ControlArt",
-        "description": "{quantos} módulo(s) ControlArt responderam na rede do Home Assistant.",
+        "description": "Módulos ControlArt que responderam na rede do Home Assistant: {quantos}.",
         "menu_options": {
           "escolher": "Escolher um módulo encontrado na rede",
           "ip": "Informar o IP"
@@ -12,7 +12,7 @@
       },
       "escolher": {
         "title": "Módulos encontrados",
-        "description": "Cada um aparece com o MAC da etiqueta da caixa e do mdConfig, e o IP em que respondeu. Os outros viram cards de descoberto depois que este for cadastrado.",
+        "description": "Cada um aparece com o tipo e o IP em que respondeu; o MAC inteiro fica no card do dispositivo depois do cadastro. Os outros viram cards de descoberto depois que este for cadastrado.",
         "data": {
           "host": "Módulo",
           "name": "Nome",

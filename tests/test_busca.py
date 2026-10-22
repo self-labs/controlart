@@ -285,6 +285,7 @@ class Cadastro(ComRede):
             const.CONF_MAC_COMPLETO: None,
         })
         self.assertEqual(passo["step_id"], "descoberto")
+        self.assertEqual(fluxo.context["title_placeholders"], {"name": "Dimmer - 192.168.1.23"})
         self.assertEqual(fluxo.unique_id, "DD-EE-FF")
         self.assertEqual(passo["description_placeholders"],
                          {"mac": "00-60-37-DD-EE-FF", "host": "192.168.1.23"})

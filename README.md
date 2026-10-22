@@ -61,7 +61,7 @@ Copie a pasta `custom_components/controlart` para dentro de `config/custom_compo
 O botão abre o cadastro direto. Sem ele: _Configurações → Dispositivos e serviços → Adicionar integração → ControlArt._
 
 1. A integração **procura os módulos na rede** do Home Assistant: tenta a porta 4998 em cada endereço e pergunta a quem atender. Leva alguns segundos.
-2. **Escolher um módulo encontrado na rede**: cada um aparece com o MAC da etiqueta da caixa e do mdConfig, e o IP em que respondeu. O tipo (relé ou dimmer) e as saídas o módulo já informou.
+2. **Escolher um módulo encontrado na rede**: cada um aparece com o tipo e o IP em que respondeu, como `Relé - 192.168.1.22`. As saídas o módulo já informou, e o MAC inteiro fica no card do dispositivo depois do cadastro.
 3. Dê um **nome** e marque quais **entradas são teclas de keypad** (pulsadores). As demais são tratadas como interruptores comuns.
 
 Se nenhum módulo responder, ou se você escolher **Informar o IP**, o cadastro pede o IP e a porta (4998, salvo se você mudou no mdConfig). Um aparelho com MAC `00:60:37` que a busca viu na rede mas que não respondeu já vem preenchido.
@@ -70,7 +70,7 @@ Cada busca deixa uma linha em _Configurações → Sistema → Logs_ (procure po
 
 ### Os outros módulos
 
-Com o primeiro cadastrado, a integração repete a busca ao iniciar e a cada hora. Cada módulo que ela achar e que ainda não estiver cadastrado aparece em _Dispositivos e serviços_ como **Descoberto**, um card por módulo com o MAC dele: **Configurar**, nome e teclas. **Ignorar** num card vale só para aquele módulo.
+Com o primeiro cadastrado, a integração repete a busca ao iniciar e a cada hora. Cada módulo que ela achar e que ainda não estiver cadastrado aparece em _Dispositivos e serviços_ como **Descoberto**, um card por módulo com o tipo e o IP (`Dimmer - 192.168.1.23`): **Configurar**, nome e teclas. O formulário do card mostra o MAC inteiro, para conferir com a etiqueta. **Ignorar** num card vale só para aquele módulo.
 
 Para não esperar a próxima busca: na integração, **Configurar → Procurar módulos na rede**. **Adicionar pelo IP** continua lá, para um módulo em outra porta ou outra rede.
 

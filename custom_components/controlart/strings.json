@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "ControlArt",
-        "description": "{quantos} ControlArt module(s) answered on the Home Assistant network.",
+        "description": "ControlArt modules that answered on the Home Assistant network: {quantos}.",
         "menu_options": {
           "escolher": "Pick a module found on the network",
           "ip": "Enter the IP"
@@ -12,7 +12,7 @@
       },
       "escolher": {
         "title": "Modules found",
-        "description": "Each one shows the MAC printed on the box label and in mdConfig, and the IP it answered at. The others become discovered cards once this one is set up.",
+        "description": "Each one shows its type and the IP it answered at; the full MAC is in the device card once it is set up. The others become discovered cards once this one is set up.",
         "data": {
           "host": "Module",
           "name": "Name",
