@@ -9,6 +9,17 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.5] - 2026-10-21
+
+### ✨ Added
+
+- **O cadastro procura os módulos na rede.** Em **Adicionar integração**, a integração tenta a porta 4998 em cada endereço da rede do Home Assistant (alguns segundos) e lista os módulos que responderem, com o MAC da etiqueta e o IP. Basta escolher, dar o nome e marcar as teclas; **Informar o IP** continua como alternativa. Em **Configurar**, **Procurar módulos na rede** faz o mesmo para os módulos seguintes.
+- **Busca de hora em hora.** Com a integração configurada, a mesma busca roda ao iniciar e a cada hora: um módulo novo aparece como card de **Descoberto**, e um módulo cadastrado que mudou de IP volta sozinho no endereço novo.
+
+### 🐛 Fixed
+
+- **Nenhum card aparecia depois de instalar e reiniciar.** A 2026.10.4 contava com o Home Assistant achando os módulos pelo início do MAC, mas o HA só vê o módulo quando ele pede IP ao ligar: a varredura de hora em hora do HA só devolve aparelho com nome reverso no DNS do roteador, o que roteador doméstico não costuma ter. Na Dora (Deco), o navegador DHCP do HA não mostrou nenhum módulo. A busca da própria integração resolve, e o reconhecimento pelo MAC continua para quando o módulo liga.
+
 ## [2026.10.4] - 2026-10-21
 
 ### ✨ Added
@@ -81,7 +92,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.4...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.5...HEAD
+[2026.10.5]: https://github.com/self-labs/controlart/compare/v2026.10.4...v2026.10.5
 [2026.10.4]: https://github.com/self-labs/controlart/compare/v2026.10.3...v2026.10.4
 [2026.10.3]: https://github.com/self-labs/controlart/compare/v2026.10.2...v2026.10.3
 [2026.10.2]: https://github.com/self-labs/controlart/compare/v2026.10.1...v2026.10.2
