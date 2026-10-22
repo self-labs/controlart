@@ -9,6 +9,13 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.10.8] - 2026-10-22
+
+### 🔧 Changed
+
+- **O card de descoberto diz o tipo e o IP** (`Relé - 192.168.1.22`, `Dimmer - 192.168.1.23`) em vez de `ControlArt` e o MAC inteiro, que repetia o nome da integração da linha de baixo. O MAC inteiro continua no formulário que o card abre e no card do dispositivo depois do cadastro. A lista da busca, em **Adicionar integração** e em **Procurar módulos na rede**, usa o mesmo formato.
+- **O menu da busca não diz mais "3 módulo(s)"**: "Módulos ControlArt que responderam na rede do Home Assistant: 3."
+
 ## [2026.10.7] - 2026-10-22
 
 ### 🔧 Changed
@@ -114,7 +121,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.7...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.8...HEAD
+[2026.10.8]: https://github.com/self-labs/controlart/compare/v2026.10.7...v2026.10.8
 [2026.10.7]: https://github.com/self-labs/controlart/compare/v2026.10.6...v2026.10.7
 [2026.10.6]: https://github.com/self-labs/controlart/compare/v2026.10.5...v2026.10.6
 [2026.10.5]: https://github.com/self-labs/controlart/compare/v2026.10.4...v2026.10.5
