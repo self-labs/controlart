@@ -9,6 +9,12 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+## [2026.11.1] - 2026-11-05
+
+### 🔧 Changed
+
+- **A busca automática agora é opcional e vem desligada.** A integração só percorre a rede quando você pede: no cadastro e em **Configurar → Procurar módulos na rede**. A busca ao iniciar e a cada hora (porta 4998, até 1024 endereços) passou para **Configurar → Busca automática**, desligada por padrão, também em quem atualizar. Foi o pedido da revisão do catálogo padrão do HACS: tráfego que ninguém pediu, na rede de todo usuário. Numa rede em que o Home Assistant não mostra o card dos módulos sozinho (num roteador Deco, o navegador DHCP do HA não listou nenhum), ligue a opção.
+
 ## [2026.10.8] - 2026-10-22
 
 ### 🔧 Changed
@@ -121,7 +127,8 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
 
-[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.10.8...HEAD
+[Unreleased]: https://github.com/self-labs/controlart/compare/v2026.11.1...HEAD
+[2026.11.1]: https://github.com/self-labs/controlart/compare/v2026.10.8...v2026.11.1
 [2026.10.8]: https://github.com/self-labs/controlart/compare/v2026.10.7...v2026.10.8
 [2026.10.7]: https://github.com/self-labs/controlart/compare/v2026.10.6...v2026.10.7
 [2026.10.6]: https://github.com/self-labs/controlart/compare/v2026.10.5...v2026.10.6
