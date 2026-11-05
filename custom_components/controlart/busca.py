@@ -18,9 +18,11 @@ A 2026.10.5 nao achou os modulos de um cliente porque o IP fixo do HA estava com
 mascara /32 e a busca percorreu zero enderecos (enderecos_da_rede). Cada busca
 deixa no log o que encontrou, para o proximo caso aparecer de cara.
 
-Roda no cadastro, nas opcoes e, com a integracao ja configurada, ao iniciar e
-a cada hora: modulo novo vira card de descoberto, modulo cadastrado que mudou
-de IP tem o IP corrigido.
+Roda no cadastro e nas opcoes, quando o usuario pede. Ao iniciar e a cada hora
+so com a busca automatica ligada em Configurar (desligada por padrao desde a
+2026.11.1: a revisao do catalogo padrao do HACS, em 04/11/2026, pediu nao varrer
+a rede de ninguem sem ele pedir): modulo novo vira card de descoberto, modulo
+cadastrado que mudou de IP tem o IP corrigido.
 """
 
 from __future__ import annotations
@@ -39,6 +41,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import discovery_flow
 
 from .const import (
+    CONF_BUSCA_AUTOMATICA,
     CONF_MAC_COMPLETO,
     CONF_MODULOS,
     CONF_SAIDAS,
@@ -161,6 +164,11 @@ async def varre(hass: HomeAssistant, hosts: list[str], porta: int = PORTA_PADRAO
         sorted(resultado.modulos), resultado.macs or "nenhum", sorted(resultado.sem_resposta) or "nenhum",
     )
     return resultado
+
+
+def automatica(entry: ConfigEntry) -> bool:
+    """Se a busca roda sozinha ao iniciar e a cada hora (Configurar > Busca automatica)."""
+    return bool(entry.options.get(CONF_BUSCA_AUTOMATICA, False))
 
 
 async def procura(hass: HomeAssistant, entry: ConfigEntry) -> None:

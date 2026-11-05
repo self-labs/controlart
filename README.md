@@ -70,9 +70,9 @@ Cada busca deixa uma linha em _Configurações → Sistema → Logs_ (procure po
 
 ### Os outros módulos
 
-Com o primeiro cadastrado, a integração repete a busca ao iniciar e a cada hora. Cada módulo que ela achar e que ainda não estiver cadastrado aparece em _Dispositivos e serviços_ como **Descoberto**, um card por módulo com o tipo e o IP (`Dimmer - 192.168.1.23`): **Configurar**, nome e teclas. O formulário do card mostra o MAC inteiro, para conferir com a etiqueta. **Ignorar** num card vale só para aquele módulo.
+Na integração, **Configurar → Procurar módulos na rede** faz a mesma busca do cadastro e lista os módulos que ainda não estão cadastrados. **Adicionar pelo IP** continua lá, para um módulo em outra porta ou outra rede.
 
-Para não esperar a próxima busca: na integração, **Configurar → Procurar módulos na rede**. **Adicionar pelo IP** continua lá, para um módulo em outra porta ou outra rede.
+**Configurar → Busca automática** liga a busca ao iniciar e a cada hora. Vem **desligada**: a integração só percorre a rede quando você pede. Ligada, cada módulo que a busca achar e que ainda não estiver cadastrado aparece em _Dispositivos e serviços_ como **Descoberto**, um card por módulo com o tipo e o IP (`Dimmer - 192.168.1.23`): **Configurar**, nome e teclas. O formulário do card mostra o MAC inteiro, para conferir com a etiqueta. **Ignorar** num card vale só para aquele módulo. Ligue quando o Home Assistant não mostrar os cards sozinho (abaixo): num roteador Deco, por exemplo, o navegador DHCP do HA não listou nenhum módulo.
 
 O Home Assistant também mostra o card sozinho, sem nenhuma busca, quando fica sabendo do MAC do módulo: o manifest pede ao HA os aparelhos com o início de MAC `00-60-37`. Isso acontece de dois jeitos:
 
@@ -85,7 +85,7 @@ Esse início de MAC é do fabricante do chip e outro aparelho pode ter, por isso
 
 O nome das saídas começa como "Saída 1", "Saída 2"… Renomeie no próprio Home Assistant e ponha cada uma na sua área; a integração não mexe no que você ajustou.
 
-Um **IP fixo** para cada módulo (reserva no roteador ou IP estático no mdConfig) continua recomendado. Se o IP de um módulo cadastrado mudar, a busca de hora em hora o acha no endereço novo e corrige o cadastro; até lá, o módulo fica indisponível.
+Um **IP fixo** para cada módulo (reserva no roteador ou IP estático no mdConfig) continua recomendado. Se o IP de um módulo cadastrado mudar, ele fica indisponível até o cadastro ser corrigido: sozinho, quando o Home Assistant vê o módulo pedir o IP novo ou, com a **Busca automática** ligada, na próxima busca; à mão, em **Configurar → Editar um módulo**.
 
 ## Dicas
 
@@ -122,7 +122,7 @@ O ícone e o logo da integração são a marca da [ControlArt](https://www.contr
 
 ## English summary
 
-Local-push Home Assistant integration for **ControlArt wired modules**: the relay module (10 relay outputs, 12 digital inputs) and the dimmer module (channels with a 0 to 255 level, 12 digital inputs). Each module becomes a device with one `light` entity per output (with brightness on the dimmer), one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, a connectivity sensor, a diagnostic IP sensor, and "All on" / "All off" buttons for the whole module. The device card shows the module firmware and its full MAC, and **Download diagnostics** returns the last lines exchanged with each module. Setup searches the Home Assistant network for modules on port 4998 and lists the ones that answer, so only a name and the keypad inputs are asked. Once the first module is set up, the search runs at startup and every hour: new modules show up as discovered cards, and a configured module whose IP changed is followed. Home Assistant's own DHCP discovery (MAC prefix `00:60:37`) also shows a card when a module requests an address at power-up. Modules on another port or network are added by IP. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
+Local-push Home Assistant integration for **ControlArt wired modules**: the relay module (10 relay outputs, 12 digital inputs) and the dimmer module (channels with a 0 to 255 level, 12 digital inputs). Each module becomes a device with one `light` entity per output (with brightness on the dimmer), one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, a connectivity sensor, a diagnostic IP sensor, and "All on" / "All off" buttons for the whole module. The device card shows the module firmware and its full MAC, and **Download diagnostics** returns the last lines exchanged with each module. Setup searches the Home Assistant network for modules on port 4998 and lists the ones that answer, so only a name and the keypad inputs are asked. Configure → Search the network for modules runs the same search on demand. The network is only searched when you ask: an optional **Automatic search** (Configure, off by default) repeats it at startup and every hour, so new modules show up as discovered cards and a configured module whose IP changed is followed, for networks where Home Assistant's DHCP discovery does not see the modules. Home Assistant's own DHCP discovery (MAC prefix `00:60:37`) also shows a card when a module requests an address at power-up. Modules on another port or network are added by IP. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
 
 Install with the HACS button above (or add `https://github.com/self-labs/controlart` as a custom repository, type Integration), restart, then use the setup button to pick the first module from the search. Versions are CalVer (`YYYY.M.R`), listed in [CHANGELOG.md](CHANGELOG.md).
 

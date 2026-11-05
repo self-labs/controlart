@@ -57,14 +57,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ControlArtConfigEntry) -
         atualiza_dispositivo(hass, entry.entry_id, modulo)
     entry.async_on_unload(entry.add_update_listener(_recarrega))
 
-    # modulos novos viram card, e quem mudou de IP volta: ao iniciar e a cada hora
-    async def _procura(_agora: datetime | None = None) -> None:
-        await busca.procura(hass, entry)
+    # com a busca automatica ligada, modulos novos viram card e quem mudou de IP volta:
+    # ao iniciar e a cada hora. Desligada (o padrao), a rede so e varrida quando pedem
+    if busca.automatica(entry):
+        async def _procura(_agora: datetime | None = None) -> None:
+            await busca.procura(hass, entry)
 
-    entry.async_create_background_task(hass, _procura(), "controlart busca")
-    entry.async_on_unload(
-        async_track_time_interval(hass, _procura, timedelta(seconds=INTERVALO_BUSCA))
-    )
+        entry.async_create_background_task(hass, _procura(), "controlart busca")
+        entry.async_on_unload(
+            async_track_time_interval(hass, _procura, timedelta(seconds=INTERVALO_BUSCA))
+        )
     return True
 
 

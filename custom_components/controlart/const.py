@@ -28,6 +28,7 @@ CONF_TECLAS = "keypad_inputs"   # entradas ligadas a teclas de keypad (pulsadore
 CONF_TIPO = "module_type"       # ausente nos cadastros anteriores ao dimmer: rele
 CONF_SAIDAS = "outputs"         # saidas ou canais; ausente: N_SAIDAS
 CONF_MAC_COMPLETO = "full_mac"  # MAC inteiro visto pela descoberta; ausente: PREFIXO_MAC + mac
+CONF_BUSCA_AUTOMATICA = "background_search"  # busca ao iniciar e a cada hora; ausente: desligada
 
 SIGNAL_ESTADO = "controlart_estado_{}"      # por mac
 SIGNAL_TECLA = "controlart_tecla_{}_{}"     # por mac, entrada

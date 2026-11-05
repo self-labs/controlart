@@ -305,7 +305,7 @@ class Opcoes(ComRede):
 
     async def test_menu_comeca_por_procurar(self):
         menu = await self.opcoes().async_step_init()
-        self.assertEqual(menu["menu_options"], ["procurar", "adicionar"])
+        self.assertEqual(menu["menu_options"], ["procurar", "adicionar", "busca_automatica"])
 
     async def test_procurar_lista_so_os_nao_cadastrados(self):
         fluxo = self.opcoes(cadastrado("AA-BB-CC", "192.168.1.21"))
@@ -320,6 +320,41 @@ class Opcoes(ComRede):
         fluxo = self.opcoes(cadastrado("AA-BB-CC", "192.168.1.21"), cadastrado("DD-EE-FF", "192.168.1.23"))
         fim = await fluxo.async_step_procurar()
         self.assertEqual(fim, {"type": "abort", "reason": "nenhum_novo"})
+
+
+class BuscaAutomatica(ComRede):
+    """Ao iniciar e a cada hora, so se o usuario ligar: a revisao do HACS (04/11/2026)
+    pediu nao varrer a rede de ninguem sem pedido."""
+
+    modulos = Opcoes.modulos
+    opcoes = Opcoes.opcoes
+
+    def test_desligada_por_padrao(self):
+        self.assertFalse(busca.automatica(Entrada(cadastrado("AA-BB-CC", "192.168.1.21"))))
+
+    async def test_ligar_guarda_a_opcao_e_os_modulos(self):
+        fluxo = self.opcoes(cadastrado("AA-BB-CC", "192.168.1.21"))
+        passo = await fluxo.async_step_busca_automatica()
+        self.assertEqual(passo["step_id"], "busca_automatica")
+        fim = await fluxo.async_step_busca_automatica({const.CONF_BUSCA_AUTOMATICA: True})
+        self.assertTrue(fim["data"][const.CONF_BUSCA_AUTOMATICA])
+        self.assertEqual([m["mac"] for m in fim["data"][const.CONF_MODULOS]], ["AA-BB-CC"])
+        fluxo.config_entry.options = fim["data"]
+        self.assertTrue(busca.automatica(fluxo.config_entry))
+
+    async def test_cadastrar_pela_busca_nao_desliga_a_opcao(self):
+        fluxo = self.opcoes(cadastrado("AA-BB-CC", "192.168.1.21"))
+        fluxo.config_entry.options[const.CONF_BUSCA_AUTOMATICA] = True
+        await fluxo.async_step_procurar()
+        fim = await fluxo.async_step_procurar({"host": "192.168.1.23", "name": "", "keypad_inputs": []})
+        self.assertTrue(fim["data"][const.CONF_BUSCA_AUTOMATICA])
+
+    async def test_remover_nao_desliga_a_opcao(self):
+        fluxo = self.opcoes(cadastrado("AA-BB-CC", "192.168.1.21"), cadastrado("DD-EE-FF", "192.168.1.23"))
+        fluxo.config_entry.options[const.CONF_BUSCA_AUTOMATICA] = True
+        fim = await fluxo.async_step_remover({"mac": "DD-EE-FF"})
+        self.assertTrue(fim["data"][const.CONF_BUSCA_AUTOMATICA])
+        self.assertEqual([m["mac"] for m in fim["data"][const.CONF_MODULOS]], ["AA-BB-CC"])
 
 
 if __name__ == "__main__":

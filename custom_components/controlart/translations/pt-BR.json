@@ -69,7 +69,8 @@
           "procurar": "Procurar módulos na rede",
           "adicionar": "Adicionar pelo IP",
           "escolher_editar": "Editar um módulo",
-          "remover": "Remover um módulo"
+          "remover": "Remover um módulo",
+          "busca_automatica": "Busca automática"
         }
       },
       "procurar": {
@@ -119,6 +120,13 @@
         "description": "As entidades do módulo saem do Home Assistant.",
         "data": {
           "mac": "Módulo"
+        }
+      },
+      "busca_automatica": {
+        "title": "Busca automática",
+        "description": "Vem desligada. Ligada, a integração procura módulos na rede do Home Assistant ao iniciar e a cada hora, na porta 4998 de até 1024 endereços: módulo novo aparece como descoberto, e módulo cadastrado encontrado em outro IP tem o IP corrigido. Ligue quando a descoberta por DHCP do Home Assistant não enxergar os módulos nesta rede. Desligada, a rede só é varrida em Procurar módulos na rede.",
+        "data": {
+          "background_search": "Procurar ao iniciar e a cada hora"
         }
       }
     },

@@ -32,14 +32,20 @@ never comes here.
     time). Then reads `/proc/net/arp` and probes again, with the normal 5 s timeout and two
     tries, every `00:60:37` neighbour that did not answer; that also yields the full MAC. Each
     search logs one INFO line with what it found: read it first when a client says nothing
-    showed up ("busca em 0 enderecos" means the HA network setting, not the modules). Runs in the setup flow, in Configure > Search, and once the entry
-    exists at startup and every hour (`__init__.py`): new modules become discovered cards
-    (`integration_discovery`), a configured module found at another IP gets its IP updated.
-    Needed because HA's own discovery cannot see the modules: its hourly scan (aiodiscover)
-    only returns hosts with a PTR record on the router's DNS, and on a client's Deco the DHCP
-    browser listed none (2026-10-21).
+    showed up ("busca em 0 enderecos" means the HA network setting, not the modules). Runs in
+    the setup flow and in Configure > Search, when the user asks. At startup and every hour
+    (`__init__.py`) only with **Configure > Automatic search** on (`background_search` in the
+    entry options, `busca.automatica()`), **off by default**: new modules become discovered
+    cards (`integration_discovery`), a configured module found at another IP gets its IP
+    updated. Off by default since 2026.11.1 because the `hacs/default` review (frenck,
+    2026-11-04) refused a sweep that runs on every user's network unrequested; never turn it
+    back on by default. It stays as an option because HA's own discovery cannot see the
+    modules on some networks: its hourly scan (aiodiscover) only returns hosts with a PTR
+    record on the router's DNS, and on a client's Deco the DHCP browser listed none
+    (2026-10-21). Every options step saves `{**options, ...}`, so editing a module keeps the
+    option.
   - `config_flow.py`: setup runs the search and offers the modules found (menu: pick one, or
-    enter the IP); cards come from the hourly search or from DHCP discovery (`manifest.json`
+    enter the IP); cards come from the automatic search or from DHCP discovery (`manifest.json`
     matches MAC `006037*`, which only fires when HA sees the module request an address at
     power-up; the flow probes port 4998 first). One card per module, `unique_id` = short MAC.
     One config entry holds every module: the first module creates it (`unique_id` =
@@ -65,7 +71,7 @@ never comes here.
 
 ## Commands
 
-```powershell
+```bash
 python -B -m unittest discover -s tests
 ```
 

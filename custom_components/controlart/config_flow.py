@@ -8,8 +8,9 @@ modulos: o primeiro a cria, os demais entram nela.
 Tres caminhos ate o modulo:
 - Adicionar integracao: a integracao procura na rede (busca.py) e lista quem
   respondeu; digitar o IP fica como alternativa.
-- Card de descoberto vindo da busca de hora em hora, que so roda com a
-  integracao ja configurada (integration_discovery).
+- Card de descoberto vindo da busca automatica (ao iniciar e de hora em hora),
+  que so roda com a integracao ja configurada e a opcao ligada em Configurar
+  (integration_discovery).
 - Card de descoberto vindo do DHCP do HA (manifest: MAC 00:60:37). So acontece
   quando o HA ve o modulo pedir IP, ao ligar: a varredura do proprio HA
   depende de nome reverso no DNS do roteador e nao achou nada num cliente.
@@ -40,6 +41,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_BUSCA_AUTOMATICA,
     CONF_MAC_COMPLETO,
     CONF_MODULOS,
     CONF_SAIDAS,
@@ -238,7 +240,7 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_integration_discovery(
         self, discovery_info: dict[str, Any]
     ) -> ConfigFlowResult:
-        """Modulo achado pela busca de hora em hora (busca.procura), ja perguntado."""
+        """Modulo achado pela busca automatica (busca.procura), ja perguntado."""
         identidade = Identidade(
             discovery_info[CONF_MAC], discovery_info[CONF_TIPO], discovery_info[CONF_SAIDAS]
         )
@@ -327,7 +329,7 @@ class ControlArtConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class OpcoesControlArt(OptionsFlow):
-    """Adicionar, editar e remover modulos."""
+    """Adicionar, editar e remover modulos, e ligar a busca automatica."""
 
     def __init__(self) -> None:
         self._mac: str | None = None
@@ -351,13 +353,31 @@ class OpcoesControlArt(OptionsFlow):
         )
 
     def _salva(self, modulos: list[dict[str, Any]]) -> ConfigFlowResult:
-        return self.async_create_entry(data={CONF_MODULOS: modulos})
+        # as outras opcoes (a busca automatica) ficam como estao
+        return self.async_create_entry(data={**self.config_entry.options, CONF_MODULOS: modulos})
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         opcoes = ["procurar", "adicionar"]
         if self._modulos():
             opcoes += ["escolher_editar", "remover"]
+        opcoes.append("busca_automatica")
         return self.async_show_menu(step_id="init", menu_options=opcoes)
+
+    async def async_step_busca_automatica(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Liga ou desliga a busca ao iniciar e a cada hora; a entrada recarrega."""
+        if user_input is not None:
+            ligada = bool(user_input[CONF_BUSCA_AUTOMATICA])
+            return self.async_create_entry(
+                data={**self.config_entry.options, CONF_BUSCA_AUTOMATICA: ligada}
+            )
+        return self.async_show_form(
+            step_id="busca_automatica",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_BUSCA_AUTOMATICA, default=busca.automatica(self.config_entry)): bool}
+            ),
+        )
 
     async def async_step_procurar(
         self, user_input: dict[str, Any] | None = None

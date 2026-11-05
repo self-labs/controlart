@@ -69,7 +69,8 @@
           "procurar": "Search the network for modules",
           "adicionar": "Add a module by IP",
           "escolher_editar": "Edit a module",
-          "remover": "Remove a module"
+          "remover": "Remove a module",
+          "busca_automatica": "Automatic search"
         }
       },
       "procurar": {
@@ -119,6 +120,13 @@
         "description": "The module's entities are removed from Home Assistant.",
         "data": {
           "mac": "Module"
+        }
+      },
+      "busca_automatica": {
+        "title": "Automatic search",
+        "description": "Off by default. When on, the integration searches the Home Assistant network for modules at startup and every hour, on port 4998 of up to 1024 addresses: a new module shows up as a discovered card, and a configured module found at another IP gets its IP updated. Turn it on when Home Assistant's DHCP discovery does not see the modules on this network. When off, the network is only searched from Search the network for modules.",
+        "data": {
+          "background_search": "Search at startup and every hour"
         }
       }
     },
