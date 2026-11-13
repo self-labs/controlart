@@ -9,6 +9,12 @@ As versões `1.0.0` e `1.0.1` são do projeto original de Tompson Pecini, de ond
 
 ## [Unreleased]
 
+### 🔧 Changed
+
+- **O README instala pelo Marketplace**, que substituiu o HACS no Home Assistant 2026.11: o botão
+  abre o repositório lá, à mão é **Configurações → Marketplace** e procurar **ControlArt** (ela está no
+  catálogo), e **Instalar**. Os passos do HACS ficam para um Home Assistant mais antigo.
+
 ## [2026.11.1] - 2026-11-05
 
 ### 🔧 Changed
@@ -126,6 +132,17 @@ Primeira versão como projeto próprio da Self-Labs, inspirado no
 ### ✨ Added
 
 - Integração local para o módulo cabeado a relé: uma `light` por saída, `event` por tecla de keypad, `binary_sensor` por entrada de interruptor e de conexão, cadastro pelo IP.
+
+## Legenda
+
+| Tipo          | Significado                               |
+| ------------- | ----------------------------------------- |
+| ✨ Added      | funcionalidade nova                       |
+| 🔧 Changed    | mudança em funcionalidade existente       |
+| ⚠️ Deprecated | funcionalidade que será removida em breve |
+| 🗑️ Removed    | funcionalidade removida nesta versão      |
+| 🐛 Fixed      | correção de defeito                       |
+| 🔐 Security   | vulnerabilidade tratada e endurecimento   |
 
 [Unreleased]: https://github.com/self-labs/controlart/compare/v2026.11.1...HEAD
 [2026.11.1]: https://github.com/self-labs/controlart/compare/v2026.10.8...v2026.11.1

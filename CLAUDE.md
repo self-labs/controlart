@@ -3,8 +3,9 @@
 Custom Home Assistant integration (domain `controlart`) for the **ControlArt wired modules**
 configured through mdConfig: the **relay** module (10 relay outputs, 12 inputs) and the **dimmer**
 module (channels with a 0 to 255 level, 12 inputs). It talks to each module over TCP on the LAN
-(port 4998 by default), local push, no cloud. Installed through HACS as a custom repository;
-modules on the same network are discovered by their MAC prefix.
+(port 4998 by default), local push, no cloud. Installed through the Marketplace, where it is in
+the catalog (HACS before HA 2026.11, as a custom repository); modules on the same network are
+discovered by their MAC prefix.
 
 **Independent project since 2026-10-18.** It started as a fork of
 [tompsonpecini/controlart](https://github.com/tompsonpecini/controlart) (MIT); the credit stays in
@@ -103,7 +104,8 @@ for a repository limited to some countries.
 ## Versioning and releases
 
 CalVer `YYYY.M.R` in `manifest.json`, matching the annotated git tag `vYYYY.M.R` and a GitHub
-release whose notes are the changelog section. HACS offers releases as updates once they exist.
+release whose notes are the changelog section. The Marketplace (HACS before HA 2026.11) offers
+releases as updates once they exist.
 `1.0.0` and `1.0.1` are Tompson's versions and keep their tags.
 
 Release order: close `[Unreleased]` in `CHANGELOG.md` into `## [X] - YYYY-MM-DD`, update the

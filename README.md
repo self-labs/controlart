@@ -1,4 +1,4 @@
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=home-assistant&logoColor=white)](https://hacs.xyz/) [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/) [![Release](https://img.shields.io/github/v/release/self-labs/controlart?color=293a44)](https://github.com/self-labs/controlart/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/self-labs/controlart/blob/master/LICENSE)
+[![Marketplace](https://img.shields.io/badge/Marketplace-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/integrations/marketplace) [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/) [![Release](https://img.shields.io/github/v/release/self-labs/controlart?color=293a44)](https://github.com/self-labs/controlart/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/self-labs/controlart/blob/master/LICENSE)
 
 <!-- Todo link da linha acima fica absoluto. O HACS reescreve um link relativo prefixando
 o primeiro "(" da linha inteira, que é a imagem do primeiro badge. -->
@@ -30,21 +30,22 @@ Os interruptores e keypads da parede continuam funcionando como sempre: quem aci
 
 ## Instalação
 
-### HACS (recomendado)
+### Marketplace (recomendado)
 
-[![Abrir este repositório no HACS do seu Home Assistant.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=self-labs&repository=controlart&category=integration)
+[![Abrir este repositório no Marketplace do seu Home Assistant.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=self-labs&repository=controlart&category=integration)
 
-O botão abre este repositório direto no seu HACS. Clique em **Baixar** e reinicie o Home Assistant.
+O botão abre este repositório direto no Marketplace, que vem dentro do Home Assistant desde o 2026.11, em **Configurações → Marketplace** (ele substituiu o HACS; num Home Assistant mais antigo, o mesmo botão abre o HACS, onde o botão é **Baixar**). Clique em **Instalar** e reinicie o Home Assistant.
 
 Ele funciona pelo [my.home-assistant.io](https://my.home-assistant.io/), que só sabe chegar na sua instância depois que você informa o endereço dela uma vez, em **Configurações → Sistema → Rede → URL do Home Assistant**. Até lá, ele pergunta.
 
 <details>
 <summary>Fazendo à mão</summary>
 
-1. HACS → menu ⋮ → **Repositórios personalizados**.
-2. URL `https://github.com/self-labs/controlart`, categoria **Integração** → **Adicionar**.
-3. Abra o repositório e clique em **Baixar**.
-4. Reinicie o Home Assistant.
+1. **Configurações → Marketplace** e procure **ControlArt**: ela está no catálogo, não há link a adicionar.
+2. Abra o repositório e clique em **Instalar**.
+3. Reinicie o Home Assistant.
+
+Num Home Assistant anterior ao 2026.11: HACS → menu ⋮ → **Repositórios personalizados**, URL `https://github.com/self-labs/controlart`, categoria **Integração** → **Adicionar**, depois **Baixar** e reinicie.
 
 </details>
 
@@ -110,7 +111,7 @@ Os testes rodam sem o Home Assistant instalado, só com a biblioteca padrão: `p
 
 ## Versões
 
-As versões seguem o calendário (`AAAA.M.R`: ano, mês e a revisão dentro do mês), não o versionamento semântico. O que mudou em cada uma está no [CHANGELOG.md](CHANGELOG.md). O HACS oferece cada versão nova como atualização.
+As versões seguem o calendário (`AAAA.M.R`: ano, mês e a revisão dentro do mês), não o versionamento semântico. O que mudou em cada uma está no [CHANGELOG.md](CHANGELOG.md). O Marketplace oferece cada versão nova como atualização, em **Configurações → Atualizações**.
 
 ## Créditos
 
@@ -124,7 +125,7 @@ O ícone e o logo da integração são a marca da [ControlArt](https://www.contr
 
 Local-push Home Assistant integration for **ControlArt wired modules**: the relay module (10 relay outputs, 12 digital inputs) and the dimmer module (channels with a 0 to 255 level, 12 digital inputs). Each module becomes a device with one `light` entity per output (with brightness on the dimmer), one `event` entity per keypad push button, one diagnostic `binary_sensor` per switch input, a connectivity sensor, a diagnostic IP sensor, and "All on" / "All off" buttons for the whole module. The device card shows the module firmware and its full MAC, and **Download diagnostics** returns the last lines exchanged with each module. Setup searches the Home Assistant network for modules on port 4998 and lists the ones that answer, so only a name and the keypad inputs are asked. Configure → Search the network for modules runs the same search on demand. The network is only searched when you ask: an optional **Automatic search** (Configure, off by default) repeats it at startup and every hour, so new modules show up as discovered cards and a configured module whose IP changed is followed, for networks where Home Assistant's DHCP discovery does not see the modules. Home Assistant's own DHCP discovery (MAC prefix `00:60:37`) also shows a card when a module requests an address at power-up. Modules on another port or network are added by IP. Wall switches and keypads keep working through the module itself; Home Assistant follows every change and can switch outputs alongside them.
 
-Install with the HACS button above (or add `https://github.com/self-labs/controlart` as a custom repository, type Integration), restart, then use the setup button to pick the first module from the search. Versions are CalVer (`YYYY.M.R`), listed in [CHANGELOG.md](CHANGELOG.md).
+Install with the button above, which opens the Marketplace (**Settings → Marketplace**, search **ControlArt**; on Home Assistant older than 2026.11 it opens HACS, where you add `https://github.com/self-labs/controlart` as a custom repository, type Integration), restart, then use the setup button to pick the first module from the search. Versions are CalVer (`YYYY.M.R`), listed in [CHANGELOG.md](CHANGELOG.md).
 
 Inspired by [tompsonpecini/controlart](https://github.com/tompsonpecini/controlart) by Tompson Pecini, where this project started (MIT).
 
